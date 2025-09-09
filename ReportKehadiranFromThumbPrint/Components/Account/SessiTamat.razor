@@ -1,0 +1,45 @@
+﻿@page "/SessiTamat"
+
+
+
+@using ReportKehadiranFromThumbPrint.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+@rendermode InteractiveServer
+@inject NavigationManager navman
+@inject IConfiguration _conf
+@layout EmptyLayout
+
+<script type="text/javascript">
+    function preventBack() { window.history.forward(); }
+    setTimeout("preventBack()", 0);
+    window.onunload = function () { null };
+</script>
+
+<div class="card">
+    <div class="card-body text-center justify-content-center">
+        <p class="fw-bold text-danger fs-6 text">SESSI ANDA TELAH TAMAT</p><br />
+        <button class="btn btn-outline-primary" @onclick="LoginSemula">Login Semula</button>
+    </div>
+</div>
+
+
+@code {
+
+    public string Mode = string.Empty;
+
+    [AllowAnonymous]
+    protected override void OnInitialized()
+    {
+        Mode = _conf["Mode"] ?? string.Empty;
+        StateHasChanged();
+    }
+
+    [AllowAnonymous]
+    private void LoginSemula()
+    {
+        string baseUrl = (Mode == "Dev" ? "/" : "/eTakaf_v1");
+        navman.NavigateTo(navman.ToAbsoluteUri(baseUrl).ToString(), true);
+    }
+}

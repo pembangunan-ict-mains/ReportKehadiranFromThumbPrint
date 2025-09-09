@@ -1,0 +1,232 @@
+﻿@page "/LihatLaporan"
+
+
+@layout MainLayout
+@inject IConfiguration _conf
+@inject IServices _services
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IIdentityAuthenticationLib myIden
+@inject NavigationManager NavMan
+@inject IJSRuntime JSRuntime
+@inject SweetAlertService Swal
+
+<div class="container-fluid">
+    <div class="card shadow-lg">
+        <div class="card-body">
+            <h4 class="mb-4" style="text-align:center;">LAPORAN KEHADIRAN PEKERJA MAINS</h4>
+            <div class="card py-3 me-3">
+                <h6 class="text-center">Pilih Bulan dan Tahun Yang Diperlukan</h6>
+                <div class="row d-flex justify-content-center mt-2 mb-3 ">
+                    <div class="col-sm-12 col-md-3">
+                        <select class="form-select" @bind="SelectedMonth">
+                            <option class="fw-bold" value="">Pilih Bulan</option>
+                            <option class="fw-bold" value="1">Januari</option>
+                            <option class="fw-bold" value="2">Februari</option>
+                            <option class="fw-bold" value="3">Mac</option>
+                            <option class="fw-bold" value="4">April</option>
+                            <option class="fw-bold" value="5">Mei</option>
+                            <option class="fw-bold" value="6">Jun</option>
+                            <option class="fw-bold" value="7">Julai</option>
+                            <option class="fw-bold" value="8">Ogos</option>
+                            <option class="fw-bold" value="9">September</option>
+                            <option class="fw-bold" value="10">Oktober</option>
+                            <option class="fw-bold" value="11">November</option>
+                            <option class="fw-bold" value="12">Disember</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-12 col-md-2">
+                        <select id="yearSelect" class="form-select" @bind="SelectedYear">
+                            <option class="fw-bold" value="">Pilih Tahun</option>
+                            @foreach (var year in Years)
+                            {
+                                <option class="fw-bold" value="@year">@year</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-sm-12 col-md-3">
+                        <button class="btn btn-outline-success" @onclick="GetData">
+                            <i class="fa-regular fa-cassette-tape pe-2"></i>
+                            Jana Laporan Bulanan
+                        </button>
+                    </div>
+                </div>
+                @if (adaKurangJamBekerja)
+                {
+                    <div class="table-responsive px-2 py-3 pe-2">
+                        @{
+                            var i = 1;
+                        }
+                        <p>Laporan Kurang Jam Bekerja</p>
+                        <table id="myTable" class="table table-bordered table-hover table-striped align-middle text-center shadow-sm rounded-3" style="font-size: 0.85rem;">
+                            <thead class="table-success">
+                                <tr class="fw-bold">
+                                    <th style="width:5%" class="text-center">#</th>
+                                    <th style="width:10%" class="text-center">Bulan</th>
+                                    <th style="width:10%" class="text-center">Tahun</th>
+                                    <th style="width:15%" class="text-center">No.Pekerja</th>
+                                    <th style="width:25%" class="text-center">Nama Pekerja</th>
+                                    <th style="width:15%" class="text-center">Kekerapan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var x in _data_kurangjambekerja)
+                                {
+                                    <tr>
+                                        <td class ="text-center">@i</td>
+                                        <td class ="text-center">@x.Bulan</td>
+                                        <td class="text-center">@x.Tahun</td>
+                                        <td class="text-center">@x.Employee</td>
+                                        <td>@x.Nama</td>
+                                        <td class="text-center"><span style="color:red;">@x.Kekerapan</span></td>
+                                    </tr>
+                                    i = i+1;
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                @if (adaRekodDetail)
+                {
+                    <div class="table-responsive px-2 py-3 pe-2">
+                        @{
+                            var i = 1;
+                        }
+                        <p>Laporan Kurang Jam Bekerja - Maklumat Terperinci</p>
+                        <table id="myTable2" class="table table-bordered table-hover table-striped align-middle text-center shadow-sm rounded-3" style="font-size: 0.85rem;">
+                            <thead class="table-success">
+                                <tr class="fw-bold">
+                                    <th style="width:5%" class="text-center">#</th>
+                                    <th style="width:5%" class="text-center">Bulan</th>
+                                    <th style="width:5%" class="text-center">Tahun</th>
+                                    <th style="width:5%" class="text-center">No.Pekerja</th>
+                                    <th style="width:20%" class="text-center">Nama Pekerja</th>
+                                    <th style="width:10%" class="text-center">Log Masuk</th>
+                                    <th style="width:10%" class="text-center">Log Keluar</th>
+                                    <th style="width:40%" class="text-center">Catatan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var x in _datadetails_kurangjambekerja)
+                                {
+                                    <tr>
+                                        <td class="text-center">@i</td>
+                                        <td class="text-center">@x.Bulan</td>
+                                        <td class="text-center">@x.Tahun</td>
+                                        <td class="text-center">@x.Employee</td>
+                                        <td>@x.Nama</td>
+                                        <td class="text-center"><span style="color:red;">@x.In</span></td>
+                                        <td class="text-center"><span style="color:red;">@x.Out</span></td>
+                                        <td>@x.Remark</td>
+                                    </tr>
+                                    i = i + 1;
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+           
+        </div>
+    </div>
+</div>
+
+
+@code {
+    public string Mode = string.Empty;
+    public bool adaRekod = false; public bool adaRekodDetail = false; public bool adaChart = false;
+    public string NOID = string.Empty;
+    public string NAMA = string.Empty;
+    private bool isLoading = false;
+    public bool adaKurangJamBekerja = false;
+
+    IEnumerable<InfoReport> _data_kurangjambekerja =[];
+    IEnumerable<InfoReportDetail> _datadetails_kurangjambekerja = [];
+
+    private List<int> Years { get; set; } = new();
+    private int SelectedYear { get; set; }
+    private int SelectedMonth { get; set; }
+
+    private async Task LoadFile()
+    {
+        await JSRuntime.InvokeVoidAsync("loadSweetAlert");
+    }
+
+    protected override void OnInitialized()
+    {
+        GenerateYears();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadFile();
+
+        }
+    }
+    private void GenerateYears()
+    {
+        int currentYear = DateTime.Now.Year;
+        int startYear = currentYear - 1;
+        int endYear = currentYear + 3;
+
+        Years = Enumerable.Range(startYear, endYear - startYear + 1).ToList();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Mode = _conf["Mode"]?.ToString() ?? string.Empty;
+        var authState = await myIden.GetUserAsync();
+        var user = authState.Identity as ClaimsIdentity;
+        NOID = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "";
+        if (user == null || !user.IsAuthenticated)
+        {
+            await myIden.SignOutUserAsync();
+            string baseUrl = (Mode == "Dev") ? "/SessiTamat" : "/rekodkedatangan/SessiTamat";
+            NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+        }
+    }
+
+
+    private async Task GetData()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(SelectedMonth.ToString()) && !string.IsNullOrEmpty(SelectedYear.ToString()))
+            {
+                _data_kurangjambekerja = await _services.GetInfoSummary_KurangJamBekerja(SelectedMonth, SelectedYear);
+                _datadetails_kurangjambekerja = await _services.GetInfoDetails_KurangJamBekerja(SelectedMonth, SelectedYear);
+
+                adaKurangJamBekerja = _data_kurangjambekerja.Any();
+                adaRekodDetail = _datadetails_kurangjambekerja.Any();
+
+                await Task.Delay(300);
+                await JSRuntime.InvokeVoidAsync("initializeDataTable", "myTable");
+                await JSRuntime.InvokeVoidAsync("initializeDataTable", "myTable2");
+                await JSRuntime.InvokeVoidAsync("initializeDataTablesForAll");
+               
+            }
+            else
+            {
+                SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Sila Pilih Bulan dan Tahun Terlebih Dahulu?",
+                    Text = "Info",
+                    Icon = SweetAlertIcon.Error,
+                    ShowCancelButton = false,
+                    ConfirmButtonText = "Ya"
+                });
+            }
+        }
+        catch(System.Exception err)
+        {
+            isLoading = false;
+            throw new Exception(err.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

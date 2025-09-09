@@ -1,0 +1,103 @@
+﻿@page "/LogOut"
+
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.AspNetCore.Authentication
+@using ReportKehadiranFromThumbPrint.Components.Layout
+@inject NavigationManager ManNav
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+@layout EmptyLayout
+@attribute [Authorize]
+@inject IConfiguration _conf
+@inject ProtectedSessionStorage sessionStorage
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="container-fluid d-flex justify-content-center align-items-center vh-100">
+    <div class="card px-4 shadow-lg text-center" style="background-color:white; width: 55rem; max-width: 100%; overflow:hidden;">
+        <div class="card-body">
+            <div class="row mb-5 mt-5">
+                <h2 style="color:black;">@MESSAGE</h2><br />
+            </div>
+            <button class="btn btn-outline-success" @onclick="LoginSemula">Login Semula</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function preventBackNavigation() {
+        history.pushState(null, "", location.href);
+        window.addEventListener("popstate", function () {
+            history.pushState(null, "", location.href);
+        });
+    }
+</script>
+
+<style type="text/css">
+    body {
+        background-image: url('../Images/tanah_kubur.jpg'); /* Replace with your image path */
+        background-size: cover; /* Ensures the image covers the whole screen */
+        background-position: center; /* Centers the image */
+        background-repeat: no-repeat; /* Prevents repetition */
+        min-height: 100vh; /* Ensures full viewport coverage */
+        min-height: 100vh;
+        align-items: center;
+        /*  display: flex; */
+        /*justify-content: center; */
+    }
+</style>
+@code {
+    [CascadingParameter]
+    public HttpContext? HttpContext { get; set; }
+
+
+    public string? MESSAGE = string.Empty;
+
+    // private bool _canNavigateAway = false;
+    public string? Mode, baseUrl = string.Empty;
+
+    //  private string? _message = "👌 You'r successfully logged out.";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("preventBackNavigation");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Mode = _conf["Mode"];
+        MESSAGE = "👍 Terima Kasih"; await Task.CompletedTask;
+        StateHasChanged();
+    }   
+
+    protected override void OnInitialized()
+    {
+        Mode = _conf["Mode"];
+        MESSAGE = "👍 Terima Kasih";
+        StateHasChanged();
+    }   
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpContext?.User.Identity?.IsAuthenticated != true)
+        {
+            return;
+        }
+        await HttpContext.SignOutAsync();
+
+        Mode = _conf["Mode"];
+        StateHasChanged();
+    }
+
+    private void LoginSemula()
+    {
+        baseUrl = (Mode == "Dev") ? "/" : "/rekodkedatangan/";
+        ManNav.NavigateTo(ManNav.ToAbsoluteUri(baseUrl).ToString());
+    }
+
+}

@@ -1,0 +1,146 @@
+﻿@page "/"
+
+
+@inject IIdentityAuthenticationLib myIden
+@inject IJSRuntime JSRuntime
+@layout EmptyLayout
+@inject NavigationManager NavMan
+@inject IServices _service
+@inject IConfiguration _conf
+
+
+<EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="Log">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="container-fluid d-flex justify-content-center align-items-center min-vh-100 p-3">
+        <div class="login-container p-4" style="width: 100%; max-width: 500px;">
+
+            <!-- Logo and Title Section -->
+            <div class="logo-section">
+             @*    <div class="logo-placeholder pulse-animation">
+                    <i class="fas fa-mosque"></i>
+                </div> *@
+                <h5 class="main-title mb-2">MAJLIS AGAMA ISLAM NEGERI SEMBILAN</h5>
+                <h6 class="sub-title">UNIT PENTADBIRAN</h6>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm">
+                <!-- User ID Input -->
+                <div class="modern-input-group">
+                    <i class="fas fa-user input-icon"></i>
+                    <InputText @onclick="reset" type="text" @bind-Value="loginModel.UserId"
+                               class="form-control modern-input"
+                               id="userId"
+                               placeholder=" "
+                               required
+                               autofocus />
+                    <label class="floating-label">ID Pengguna Cth: XXXX</label>
+                </div>
+
+                <!-- Password Input -->
+                <div class="modern-input-group">
+                    <i class="fas fa-key input-icon"></i>
+                    <InputText type="password" @bind-Value="loginModel.Password"
+                               class="form-control modern-input"
+                               id="password"
+                               placeholder=" "
+                               required />
+
+                    <label class="floating-label">Katalaluan</label>
+                    <!-- Eye icon positioned at the end of input -->
+                    <i id="toggleIcon" onclick="togglePassword()"
+                       class="fa-regular fa-eye-slash position-absolute end-0 top-50 translate-middle-y me-3"
+                       style="cursor: pointer;"></i>
+                </div>
+
+                <!-- Alert Message (Hidden by default) -->
+                @if (noError == true)
+                {
+                    <div id="alertMessage" class="alert-message">
+                        @alertMessage
+                    </div>
+                }
+              
+
+                <!-- Login Button -->
+                <button type="submit" class="btn login-btn w-100 mb-3">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    Log Masuk
+                </button>
+
+                <!-- Version Info -->
+                <div class="version-info">
+                    Version 1.0.0
+                </div>
+            </form>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    public LoginModel loginModel { get; set; } = new LoginModel
+    {
+       UserId = "sysadmin",
+       Password = "P@wd2025"
+    };
+
+    public string Mode = string.Empty;
+    public string alertMessage = string.Empty;
+    public bool noError = false;
+
+    protected override void OnInitialized()
+    {
+        alertMessage = string.Empty;noError = false;
+        Mode = _conf["Mode"] ?? string.Empty;
+    }
+
+    private void reset()
+    {
+        noError = false;StateHasChanged();        
+    }
+
+
+    private async Task HandleLogin()
+    {
+
+        bool post = await _service.CheckLoginAsync(loginModel.UserId, loginModel.Password);
+        if (post == true)
+        {
+            await myIden.SignInUserAsync(loginModel.UserId, "Admin", "SysAdmin", "IT");
+            string baseUrl = (Mode == "Dev") ? "/MainPage" : "/rekodkedatangan/MainPage";
+            NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+        }
+        else
+        {
+            var _getinfo = await _service.GetInfoUser("MA" + loginModel.UserId);
+            if (_getinfo.Any())
+            {
+                var xx = _getinfo.FirstOrDefault();
+                if (xx.NoStaf == loginModel.UserId && xx.Ic == loginModel.Password)
+                {
+                    await myIden.SignInUserAsync(loginModel.UserId, "User", "User", "All");
+                    string baseUrl = (Mode == "Dev") ? "/MainPage" : "/rekodkedatangan/MainPage";
+                    NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+                }
+            }
+            else
+            {
+                noError = true;
+                alertMessage = "Tiada id pengguna dan katalaluan yang sah atau tiada rekod dijumpai";
+                StateHasChanged();
+            }
+        }
+
+        
+    }
+
+    private void HandleCancel()
+    {
+        loginModel = new(); // Reset form
+    }
+
+
+}
