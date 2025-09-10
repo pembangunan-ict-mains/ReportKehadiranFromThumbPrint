@@ -1,7 +1,9 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Report Kehadiran Pekerja MAINS</a>
+    <div class="container-fluid d-flex flex-column justify-content-center align-items-center text-center" style="height: 100px;">
+        <p class="fw-bold mb-1" style="color: white;">MAINS</p>
+        <p class="fw-bold" style="color: red;">@NamaPekerja</p>
     </div>
+
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
@@ -16,10 +18,18 @@
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="LihatLaporan">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Load Data
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Laporan Kedatangan
             </NavLink>
         </div>
 
+        @if (NamaPekerja == "Admin")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="UploadRekod">
+                    <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Muat NaikData
+                </NavLink>
+            </div>
+        }
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="LogOut">
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Log Keluar
@@ -28,3 +38,26 @@
     </nav>
 </div>
 
+@inject IIdentityAuthenticationLib myIden
+@inject IConfiguration _conf
+@inject NavigationManager NavMan
+
+@code{
+    public string Mode = string.Empty;
+    public string NamaPekerja = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Mode = _conf["Mode"]?.ToString() ?? string.Empty;
+        var authState = await myIden.GetUserAsync();
+        var user = authState.Identity as ClaimsIdentity;
+        NamaPekerja = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "";
+        if (user == null || !user.IsAuthenticated)
+        {
+            await myIden.SignOutUserAsync();
+            string baseUrl = (Mode == "Dev") ? "/SessiTamat" : "/rekodkedatangan/SessiTamat";
+            NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+        }
+        StateHasChanged();
+    }
+}

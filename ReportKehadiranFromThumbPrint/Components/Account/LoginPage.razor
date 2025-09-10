@@ -21,8 +21,9 @@
              @*    <div class="logo-placeholder pulse-animation">
                     <i class="fas fa-mosque"></i>
                 </div> *@
-                <h5 class="main-title mb-2">MAJLIS AGAMA ISLAM NEGERI SEMBILAN</h5>
-                <h6 class="sub-title">UNIT PENTADBIRAN</h6>
+                <h5 class="main-title mb-2">Majlis Agama Islam Negeri Sembilan</h5>
+                <h6 class="sub-title">Maklumat Rekod Kehadiran Pekerja</h6>
+                <h7 class="sub-title">Unit Pentadbiran & Unit Integriti</h7>
             </div>
 
             <!-- Login Form -->
@@ -83,8 +84,8 @@
     [SupplyParameterFromForm]
     public LoginModel loginModel { get; set; } = new LoginModel
     {
-       UserId = "sysadmin",
-       Password = "P@wd2025"
+        // UserId = "sysadmin",
+        // Password = "P@wd2025"
     };
 
     public string Mode = string.Empty;
@@ -115,13 +116,20 @@
         }
         else
         {
-            var _getinfo = await _service.GetInfoUser("MA" + loginModel.UserId);
+            // var _getinfo = await _service.GetInfoUser("MA" + loginModel.UserId);
+            var _getinfo = await _service.GetloginInfo("MA" + loginModel.UserId);
             if (_getinfo.Any())
             {
+                string hashedPassword = BCrypt.Net.BCrypt.EnhancedHashPassword("Password@2025");
+
                 var xx = _getinfo.FirstOrDefault();
-                if (xx.NoStaf == loginModel.UserId && xx.Ic == loginModel.Password)
+                var pass = xx?.Password; var Nama = xx?.Nama;
+                bool _output = BCrypt.Net.BCrypt.EnhancedVerify(loginModel.Password, pass);
+
+                if (xx?.NoStaf == "MA" + loginModel.UserId && _output == true)
                 {
-                    await myIden.SignInUserAsync(loginModel.UserId, "User", "User", "All");
+                    await _service.InsertAuditLogAsync("MA" + loginModel.UserId, "Login Into Sistem");
+                    await myIden.SignInUserAsync(loginModel.UserId, Nama ?? string.Empty , "User", "All");
                     string baseUrl = (Mode == "Dev") ? "/MainPage" : "/rekodkedatangan/MainPage";
                     NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
                 }

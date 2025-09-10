@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Connections;
 using ReportKehadiranFromThumbPrint.Components;
 using SAL;
+using Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,7 @@ builder.Services.AddScoped<IIdentityAuthenticationLib, IdentityAuthenticationLib
 builder.Services.AddScoped<IRepoData, RepoData>();
 builder.Services.AddScoped<IServices, Services>();
 builder.Services.AddScoped<IReportRepo, ReportRepo>();
+builder.Services.AddScoped<ImyUtils, myUtils>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

@@ -19,6 +19,8 @@ namespace DAL.Repo
         Task<int> KiraJumlah(); Task<tblMainKehadiran?> GetLatestRecord();
         Task<IEnumerable<view_Butiran_Staf>> GetInfoUser(string userid);
         Task<IEnumerable<InfoDashboard>> GetReportForChart();
+        Task<IEnumerable<tblInfoUserReport>> GetloginInfo(string nostaff);
+        Task InsertAuditLogAsync(string noStaf, string eventDescription);
     }
     public class RepoData(ServerProd serverProd, ServerDev serverDev, ServerEHR serverEhr) : IRepoData
     {
@@ -112,7 +114,6 @@ namespace DAL.Repo
             }
 
             return 0;
-
         }
 
 
@@ -154,6 +155,224 @@ namespace DAL.Repo
             }
         }
 
+        public async Task<IEnumerable<tblInfoUserReport>> GetloginInfo(string nostaff)
+        {
+            try
+            {
+                string sql = @"select * from tblinfouserreport where nostaf=@nostaf";
+                return await _serverProd.Connections().QueryAsync<tblInfoUserReport>(sql, new {nostaf = nostaff});
+            }
+            catch (SqlException err)
+            {
+                Console.WriteLine(err.Message);
+                throw new Exception("Error in GetInfoUser: " + err.Message);
+            }
+        }
+
+
+        public async Task InsertAuditLogAsync(string noStaf, string eventDescription)
+        {
+            const string sql = @"
+                                INSERT INTO tblInfoAuditLog (CreatedDate, NoStaf, Event)
+                                VALUES (@CreatedDate, @NoStaf, @Event)";
+
+            var parameters = new
+            {
+                CreatedDate = DateTime.Now,
+                NoStaf = noStaf ?? string.Empty,
+                Event = eventDescription ?? string.Empty
+            };
+
+            using var conn = _serverProd.Connections();
+            await conn.ExecuteAsync(sql, parameters);
+        }
+
+
+        //-------------------------
+        string newString;
+        public async Task CleanDatabase1()
+        {
+            using var conn = _serverProd.Connections();
+            string sql = @"select distinct(last_name), user_id 
+                           from 
+                           tblmainkehadiran 
+                           where (last_name like 'B %' or last_name like 'B. %')";
+            try
+            {
+                var _result = await conn.QueryAsync<CleanDB>(sql);
+                if (_result.Count() > 0)
+                {
+                    foreach (var xx in _result)
+                    {
+
+                        //string val = xx.last_name.Trim().Replace(".", "");
+                        //string newString = val.StartsWith("BT") ? val.Replace("BT", "BINTI") : val.Replace("B", "BIN");
+                        string val = xx.last_name.Trim().Replace(".", "");
+                        if (val.StartsWith("B") || val.StartsWith("B."))
+                        {
+                            newString = val.Substring(1).StartsWith("T") ? "BINTI" + val.Substring(2) : "BIN" + val.Substring(1);
+                        }
+                        else
+                        {
+                            newString = val;
+                        }
+
+                        //---sql to update
+                        string sql2 = @"update tblmainkehadiran set last_name = @last where user_id=@uid";
+                        var _res2 = conn.Execute(sql2, new { last = newString, uid = xx.User_Id });
+                    }
+                }
+            }
+            catch (System.Exception err)
+            {
+                throw new Exception(err.Message);
+            }
+        }
+
+        public async Task CleanDatabase2()
+        {
+            using var conn = _serverProd.Connections();
+            string sql = @"select distinct(last_name), user_id 
+                           from 
+                           tblmainkehadiran 
+                           where (last_name like 'BT %' or last_name like 'BT. %')";
+            try
+            {
+                var _result = await conn.QueryAsync<CleanDB>(sql);
+                if (_result.Count() > 0)
+                {
+                    foreach (var xx in _result)
+                    {
+
+                        //string val = xx.last_name.Trim().Replace(".", "");
+                        //string newString = val.StartsWith("BT") ? val.Replace("BT", "BINTI") : val.Replace("B", "BIN");
+                        string val = xx.last_name.Trim().Replace(".", "");
+                        if (val.StartsWith("BT") || val.StartsWith("BT."))
+                        {
+                            newString = val.Substring(1).StartsWith("T") ? "BINTI" + val.Substring(2) : "BIN" + val.Substring(1);
+                        }
+                        else
+                        {
+                            newString = val;
+                        }
+
+                        //---sql to update
+                        string sql2 = @"update tblmainkehadiran set last_name = @last where user_id=@uid";
+                        var _res2 = conn.Execute(sql2, new { last = newString, uid = xx.User_Id });
+                    }
+                }
+            }
+            catch (System.Exception err)
+            {
+                throw new Exception(err.Message);
+            }
+        }
+
+
+        public async Task CleanDatabase_NOMA()
+        {
+            using var conn = _serverProd.Connections();
+            string sql = @"select distinct(trim(a.First_Name)) + ' ' + trim(a.Last_Name) as Nama, b.NoMa, a.User_id
+                                    from tblMainKehadiran a
+                                    inner join [tblInfoStaff] b on 
+                                    trim(a.first_name) +  ' ' + trim(a.Last_Name) = b.Nama";
+            try
+            {
+                var _res = await conn.QueryAsync<DataNOMA>(sql);
+
+                if (_res.Count() > 0)
+                {
+                    foreach (var xx in _res)
+                    {
+                        string sql2 = @"update tblmainkehadiran set Employee = @emp where user_id = @user_id ";
+                        var _res2 = conn.Execute(sql2, new { emp = xx.NoMa, user_id = xx.user_id });
+                    }
+                }
+            }
+            catch (System.Exception err)
+            {
+                throw new Exception(err.Message);
+            }
+
+        }
+
+        public async Task CleanDatabasePBNo()
+        {
+            using var conn = _serverProd.Connections();
+            string sql = @"SELECT distinct(trim(b.first_Name)) + ' ' + trim(b.last_name) as NAMA, b.Employee, b.User_Id
+                                  FROM tblMainKehadiran b
+                                  where Employee like 'PB%' order by NAMA asc";
+            try
+            {
+                var _result = await conn.QueryAsync<DataPB>(sql);
+                if (_result != null)
+                {
+                    foreach (var xx in _result)
+                    {
+                        string sql1 = @"select NoMA from tblRujukanRekod where user_id = @nama";
+                        var _result2 = await conn.QueryFirstOrDefaultAsync<string>(sql1, new { nama = xx.User_Id });
+                        if (_result2 != null)
+                        {
+                            string sql3 = @"update tblmainkehadiran set employee = @employee where user_id = @userid ";
+                            var _result3 = conn.Execute(sql3, new { employee = _result2.ToString(), userid = xx.User_Id });
+                        }
+                    }
+                }
+            }
+            catch (System.Exception err)
+            {
+                throw new Exception(err.Message);
+            }
+        }
+
+        public async Task CleanDatabasePBNo2()
+        {
+            using var conn = _serverProd.Connections();
+            string sql = @"SELECT distinct(trim(b.first_Name)) + ' ' + trim(b.last_name) as NAMA, b.Employee, b.User_Id
+                                  FROM tblMainKehadiran b
+                                  where Employee like 'PB%' order by NAMA asc";
+            try
+            {
+                var _result = await conn.QueryAsync<DataPB>(sql);
+                if (_result != null)
+                {
+                    foreach (var xx in _result)
+                    {
+                        var noma = xx.Employee.Substring(2);
+
+                        string sql3 = @"update tblmainkehadiran set employee = @employee where user_id = @userid ";
+                        var _result3 = conn.Execute(sql3, new { employee = "MA" + noma.ToString(), userid = xx.User_Id });
+                    }
+                }
+            }
+            catch (System.Exception err)
+            {
+                throw new Exception(err.Message);
+            }
+        }
+        public async Task CleanDatabaseNoStaff()
+        {
+            using var conn = _serverProd.Connections();
+            string sql = @"select user_id, noma from tblrujukanrekod order by user_id asc";
+
+            try
+            {
+                var _result = await conn.QueryAsync<RekodRujukan>(sql);
+                if (_result != null)
+                {
+                    ;
+                    foreach (var item in _result)
+                    {
+                        string sql1 = @"update tblMainKehadiran set employee = @employee where user_id = @user_id";
+                        var _update = conn.Execute(sql1, new { employee = item.NoMa, user_id = item.User_Id });
+                    }
+                }
+            }
+            catch (System.Exception err)
+            {
+                throw new Exception(err.Message);
+            }
+        }
 
 
 

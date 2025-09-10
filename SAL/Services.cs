@@ -12,6 +12,16 @@ namespace SAL
         Task<IEnumerable<InfoDashboard>> GetReportForChart();
         Task<IEnumerable<InfoReport>> GetInfoSummary_KurangJamBekerja(int Bulan, int Tahun);
         Task<IEnumerable<InfoReportDetail>> GetInfoDetails_KurangJamBekerja(int Bulan, int Tahun);
+        Task<IEnumerable<InfoReport>> GetInfoSummary_LewatThumbprint(int Bulan, int Tahun);
+        Task<IEnumerable<InfoReportDetail>> GetInfoDetails_LewatThumbprint(int Bulan, int Tahun);
+
+        Task<IEnumerable<InfoReport>> GetInfoSummary_TiadaLogkeluar(int Bulan, int Tahun);
+        Task<IEnumerable<InfoReportDetail>> GetInfoDetails_TiadaLogkeluar(int Bulan, int Tahun);
+
+        Task<IEnumerable<InfoReport>> GetInfoSummary_TiadaInfoMIA(int Bulan, int Tahun);
+        Task<IEnumerable<InfoReportDetail>> GetInfoDetail_TiadaInfoMIA(int Bulan, int Tahun);
+        Task<IEnumerable<tblInfoUserReport>> GetloginInfo(string nostaff);
+        Task InsertAuditLogAsync(string noStaf, string eventDescription);
     }
     public class Services(IRepoData repo, IReportRepo report) : IServices
     {
@@ -63,12 +73,51 @@ namespace SAL
 
         public async Task<IEnumerable<InfoReport>> GetInfoSummary_KurangJamBekerja(int Bulan, int Tahun)
         {
-            return await _report.GetInfoSummary_KurangJamBekerja(Bulan,Tahun);
+            return await _report.GetInfoSummary_KurangJamBekerja(Bulan, Tahun);
         }
 
         public async Task<IEnumerable<InfoReportDetail>> GetInfoDetails_KurangJamBekerja(int Bulan, int Tahun)
         {
             return await _report.GetInfoDetails_KurangJamBekerja(Bulan, Tahun);
+        }
+
+        public async Task<IEnumerable<InfoReport>> GetInfoSummary_LewatThumbprint(int Bulan, int Tahun)
+        {
+            return await _report.GetInfoSummary_LewatThumbprint(Bulan, Tahun);
+        }
+
+        public async Task<IEnumerable<InfoReportDetail>> GetInfoDetails_LewatThumbprint(int Bulan, int Tahun)
+        {
+            return await _report.GetInfoDetails_LewatThumbprint(Bulan, Tahun);
+        }
+
+        public async Task<IEnumerable<InfoReport>> GetInfoSummary_TiadaLogkeluar(int Bulan, int Tahun)
+        {
+            return await _report.GetInfoSummary_TiadaLogkeluar(Bulan,Tahun);
+        }
+        public async Task<IEnumerable<InfoReportDetail>> GetInfoDetails_TiadaLogkeluar(int Bulan, int Tahun)
+        {
+            return await _report.GetInfoDetails_TiadaLogkeluar(Bulan, Tahun);
+        }
+
+
+        public async Task<IEnumerable<InfoReport>> GetInfoSummary_TiadaInfoMIA(int Bulan, int Tahun)
+        {
+            return await _report.GetInfoSummary_TiadaInfoMIA(Bulan, Tahun);
+        }
+        public async Task<IEnumerable<InfoReportDetail>> GetInfoDetail_TiadaInfoMIA(int Bulan, int Tahun)
+        {
+            return await _report.GetInfoDetail_TiadaInfoMIA(Bulan , Tahun);
+        }
+
+        public async Task<IEnumerable<tblInfoUserReport>> GetloginInfo(string nostaff)
+        {
+            return await _repo.GetloginInfo(nostaff);
+        }
+
+        public async Task InsertAuditLogAsync(string noStaf, string eventDescription)
+        {
+            await _repo.InsertAuditLogAsync(noStaf, eventDescription);
         }
     }
 }

@@ -11,6 +11,13 @@
 @inject IJSRuntime JSRuntime
 @inject SweetAlertService Swal
 
+@if (isLoading)
+{
+    <div class="loading-overlay">
+        <LoadingProgress />
+    </div>
+}
+
 <div class="container-fluid">
     <div class="card shadow-lg">
         <div class="card-body">
@@ -51,82 +58,7 @@
                         </button>
                     </div>
                 </div>
-                @if (adaKurangJamBekerja)
-                {
-                    <div class="table-responsive px-2 py-3 pe-2">
-                        @{
-                            var i = 1;
-                        }
-                        <p>Laporan Kurang Jam Bekerja</p>
-                        <table id="myTable" class="table table-bordered table-hover table-striped align-middle text-center shadow-sm rounded-3" style="font-size: 0.85rem;">
-                            <thead class="table-success">
-                                <tr class="fw-bold">
-                                    <th style="width:5%" class="text-center">#</th>
-                                    <th style="width:10%" class="text-center">Bulan</th>
-                                    <th style="width:10%" class="text-center">Tahun</th>
-                                    <th style="width:15%" class="text-center">No.Pekerja</th>
-                                    <th style="width:25%" class="text-center">Nama Pekerja</th>
-                                    <th style="width:15%" class="text-center">Kekerapan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var x in _data_kurangjambekerja)
-                                {
-                                    <tr>
-                                        <td class ="text-center">@i</td>
-                                        <td class ="text-center">@x.Bulan</td>
-                                        <td class="text-center">@x.Tahun</td>
-                                        <td class="text-center">@x.Employee</td>
-                                        <td>@x.Nama</td>
-                                        <td class="text-center"><span style="color:red;">@x.Kekerapan</span></td>
-                                    </tr>
-                                    i = i+1;
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                @if (adaRekodDetail)
-                {
-                    <div class="table-responsive px-2 py-3 pe-2">
-                        @{
-                            var i = 1;
-                        }
-                        <p>Laporan Kurang Jam Bekerja - Maklumat Terperinci</p>
-                        <table id="myTable2" class="table table-bordered table-hover table-striped align-middle text-center shadow-sm rounded-3" style="font-size: 0.85rem;">
-                            <thead class="table-success">
-                                <tr class="fw-bold">
-                                    <th style="width:5%" class="text-center">#</th>
-                                    <th style="width:5%" class="text-center">Bulan</th>
-                                    <th style="width:5%" class="text-center">Tahun</th>
-                                    <th style="width:5%" class="text-center">No.Pekerja</th>
-                                    <th style="width:20%" class="text-center">Nama Pekerja</th>
-                                    <th style="width:10%" class="text-center">Log Masuk</th>
-                                    <th style="width:10%" class="text-center">Log Keluar</th>
-                                    <th style="width:40%" class="text-center">Catatan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var x in _datadetails_kurangjambekerja)
-                                {
-                                    <tr>
-                                        <td class="text-center">@i</td>
-                                        <td class="text-center">@x.Bulan</td>
-                                        <td class="text-center">@x.Tahun</td>
-                                        <td class="text-center">@x.Employee</td>
-                                        <td>@x.Nama</td>
-                                        <td class="text-center"><span style="color:red;">@x.In</span></td>
-                                        <td class="text-center"><span style="color:red;">@x.Out</span></td>
-                                        <td>@x.Remark</td>
-                                    </tr>
-                                    i = i + 1;
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-            </div>
-           
+            </div>           
         </div>
     </div>
 </div>
@@ -134,14 +66,11 @@
 
 @code {
     public string Mode = string.Empty;
-    public bool adaRekod = false; public bool adaRekodDetail = false; public bool adaChart = false;
-    public string NOID = string.Empty;
+    public bool adaRekod = false;  public bool adaChart = false;
+    public string NamaPekerja = string.Empty;
     public string NAMA = string.Empty;
-    private bool isLoading = false;
-    public bool adaKurangJamBekerja = false;
-
-    IEnumerable<InfoReport> _data_kurangjambekerja =[];
-    IEnumerable<InfoReportDetail> _datadetails_kurangjambekerja = [];
+    public string NoStaf = string.Empty;
+    public bool isLoading = false;
 
     private List<int> Years { get; set; } = new();
     private int SelectedYear { get; set; }
@@ -154,15 +83,48 @@
 
     protected override void OnInitialized()
     {
+        Mode = _conf["Mode"]?.ToString() ?? string.Empty;
         GenerateYears();
     }
 
+    private async Task LoadInitialize()
+    {
+        var tableIds = new[] { "myTable", "myTable2", "myTable3", "myTable4", "myTable5", "myTable6", "myTable7", "myTable8" };
+        foreach (var id in tableIds)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("initializeDataTable", id);
+            }
+            catch (JSDisconnectedException)
+            {
+                Console.WriteLine($"Skip init table {id}, circuit disconnected.");
+            }
+        }
+    }
+
+    private bool shouldInitializeTables = false;
+    private bool isFirstRender = true;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (shouldInitializeTables)
         {
             await LoadFile();
+            await Task.Delay(300); // Give DOM time to settle
+            var tableIds = new[] { "myTable", "myTable2", "myTable3", "myTable4", "myTable5", "myTable6", "myTable7", "myTable8" };
 
+            foreach (var id in tableIds)
+            {
+                try
+                {
+                    await JSRuntime.InvokeVoidAsync("initializeDataTable", id);
+                }
+                catch (JSDisconnectedException)
+                {
+                    Console.WriteLine($"Skip init table {id}, circuit disconnected.");
+                }
+            }
+            shouldInitializeTables = false; // Reset flag
         }
     }
     private void GenerateYears()
@@ -179,7 +141,9 @@
         Mode = _conf["Mode"]?.ToString() ?? string.Empty;
         var authState = await myIden.GetUserAsync();
         var user = authState.Identity as ClaimsIdentity;
-        NOID = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "";
+        NamaPekerja = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "";
+        NoStaf = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
+
         if (user == null || !user.IsAuthenticated)
         {
             await myIden.SignOutUserAsync();
@@ -189,44 +153,51 @@
     }
 
 
+    private bool _disposed;
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        await Task.CompletedTask;
+    }
+
     private async Task GetData()
     {
         try
         {
-            if (!string.IsNullOrEmpty(SelectedMonth.ToString()) && !string.IsNullOrEmpty(SelectedYear.ToString()))
+            if (SelectedMonth == 0 || SelectedYear == 0)
             {
-                _data_kurangjambekerja = await _services.GetInfoSummary_KurangJamBekerja(SelectedMonth, SelectedYear);
-                _datadetails_kurangjambekerja = await _services.GetInfoDetails_KurangJamBekerja(SelectedMonth, SelectedYear);
-
-                adaKurangJamBekerja = _data_kurangjambekerja.Any();
-                adaRekodDetail = _datadetails_kurangjambekerja.Any();
-
-                await Task.Delay(300);
-                await JSRuntime.InvokeVoidAsync("initializeDataTable", "myTable");
-                await JSRuntime.InvokeVoidAsync("initializeDataTable", "myTable2");
-                await JSRuntime.InvokeVoidAsync("initializeDataTablesForAll");
-               
+                await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Sila Pilih Bulan dan Tahun Terlebih Dahulu?",
+                        Text = "Info",
+                        Icon = SweetAlertIcon.Error,
+                        ShowCancelButton = false,
+                        ConfirmButtonText = "Ya"
+                    });
+                return;
             }
             else
             {
-                SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
-                {
-                    Title = "Sila Pilih Bulan dan Tahun Terlebih Dahulu?",
-                    Text = "Info",
-                    Icon = SweetAlertIcon.Error,
-                    ShowCancelButton = false,
-                    ConfirmButtonText = "Ya"
-                });
+                await _services.InsertAuditLogAsync("MA" + NoStaf, "Klik Button GetData, Get Record For " + SelectedMonth + "/" + SelectedYear);
+                var Bulan = SelectedMonth; var Tahun = SelectedYear;
+                string baseUrl = (Mode == "Dev") ? $"/ShowData/{Bulan}/{Tahun}" : $"/rekodkedatangan/ShowData/{Bulan}/{Tahun}";
+                NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
             }
         }
         catch(System.Exception err)
         {
-            isLoading = false;
-            throw new Exception(err.Message);
-        }
-        finally
-        {
-            isLoading = false;
+            throw;
         }
     }
+
+
+
+    // async Task ExportExcellHL()
+    // {
+    //     var fileName = "LaporanKeseluruhan " + jenisData + ".csv";
+    //     var content = _utils.ExportToCSV(_reportHL);
+    //     await _utils.DownloadFile(fileName, content, "text/csv");
+    // }
+
 }

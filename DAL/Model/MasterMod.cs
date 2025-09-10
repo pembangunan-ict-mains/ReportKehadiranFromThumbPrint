@@ -97,4 +97,25 @@ namespace DAL.Model
         public decimal Work { get; set; }
     }
 
+    public class tblInfoUserReport
+    {
+        public int Id { get; set; }
+        public string NoStaf { get; set; } = string.Empty;
+        public string Nama { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
+        public int Status { get; set; }
+    }
+
+    public class tblInfoAuditLog
+    {
+        public int Id { get; set; } = 0;
+
+        public DateTime? CreatedDate { get; set; } = null;
+
+        public string NoStaf { get; set; } = string.Empty;
+
+        public string Event { get; set; } = string.Empty;
+    }
+
 }

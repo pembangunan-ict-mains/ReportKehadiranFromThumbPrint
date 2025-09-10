@@ -1,0 +1,60 @@
+﻿@page "/UploadRekod"
+
+@layout MainLayout
+@inject IConfiguration _conf
+@inject IServices _services
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IIdentityAuthenticationLib myIden
+@inject NavigationManager NavMan
+@inject IJSRuntime JSRuntime
+@inject SweetAlertService Swal
+
+@if (isLoading)
+{
+    <div class="loading-overlay">
+        <LoadingProgress />
+    </div>
+}
+
+<div class="container-fluid">
+    <div class="row mt-2 mb-2">
+        <div class="col-sm-12 col-md-6">
+            <InputFile accept=".txt" multiple="false" class="form-control" OnChange="HandleFileSelection" />
+        </div>
+        <div class="col-sm-12 col-md-3">
+            <input type="text" readonly class="form-control" />
+        </div>
+        <div class="col-sm-12 col-md-3">
+            <button class="btn btn-outline-danger" @onclick="ProcessStoredFile">Muat Naik Rekod Baru</button>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    public bool isLoading = false;
+
+    private IBrowserFile? selectedFile;
+
+    private void HandleFileSelection(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+
+    private async Task ProcessStoredFile()
+    {
+        if (selectedFile != null && selectedFile.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+        {
+            using var reader = new StreamReader(selectedFile.OpenReadStream());
+            var content = await reader.ReadToEndAsync();
+
+            // ✅ Process content here
+            Console.WriteLine($"File content:\n{content}");
+        }
+        else
+        {
+            Console.WriteLine("No valid .txt file selected.");
+        }
+    }
+}
