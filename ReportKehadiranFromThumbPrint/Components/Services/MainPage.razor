@@ -21,7 +21,7 @@
 
 <div class="container">
   <div class="row">
-        <h3>Jumlah Rekod Thumbprint Bagi Tahun <span style="color:red;">@DateTime.Now.Year</span>  Mengikut Bulan</h3>
+        <h3 class="fw-bold">Jumlah Rekod Thumbprint Mengikut Bulan Bagi Tahun <span style="color:red;">@DateTime.Now.Year</span></h3>
           @if (adaRekod)
         {
            
@@ -48,7 +48,7 @@
             </div>
 
             <div class="card-body mt-5">
-                <label>JUMLAH KESELURUHAN REKOD THUMBSPRINT MENGIKUT BULAN</label>
+                <h5>Jumlah Keseluruhan Rekod Kedatangan Mengikut Bulan Bagi Tahun <span class="fw-bold" style="color:red;">@DateTime.Now.Year</span> </h5>
                 <div class="chart-container">                  
                     <canvas id="Chart1"></canvas>
                 </div>

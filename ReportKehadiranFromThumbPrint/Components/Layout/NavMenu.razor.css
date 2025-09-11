@@ -76,10 +76,16 @@
     color: white;
 }
 
-.nav-item ::deep .nav-link:hover {
+/*.nav-item ::deep .nav-link:hover {
     background-color: rgba(255,255,255,0.1);
     color: white;
 }
+*/
+    .nav-item ::deep .nav-link:hover {
+        background-color: #b8860b; /* dark goldenrod */
+        color: white;
+    }
+
 
 .nav-scrollable {
     display: none;

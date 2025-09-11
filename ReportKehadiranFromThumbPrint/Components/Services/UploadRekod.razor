@@ -18,39 +18,185 @@
 }
 
 <div class="container-fluid">
-    <div class="row mt-2 mb-2">
-        <div class="col-sm-12 col-md-6">
-            <InputFile accept=".txt" multiple="false" class="form-control" OnChange="HandleFileSelection" />
-        </div>
-        <div class="col-sm-12 col-md-3">
-            <input type="text" readonly class="form-control" />
-        </div>
-        <div class="col-sm-12 col-md-3">
-            <button class="btn btn-outline-danger" @onclick="ProcessStoredFile">Muat Naik Rekod Baru</button>
+    <h4 class="mb-4" style="text-align:center;">Muat Naik Rekod Baharu</h4>
+    <div class="card shadow-lg">
+        <div class="card-body pe-2 py-2">
+            <div class="row mt-3 mb-2">
+                <div class="col-sm-12 col-md-6">
+                    <InputFile accept=".txt" multiple="false" class="form-control" OnChange="HandleFileSelection" />
+                </div>
+                <div class="col-sm-12 col-md-3">
+                    <input type="text" readonly class="form-control" @bind="@JumlahRekod" />
+                </div>
+                <div class="col-sm-12 col-md-3">
+                    <button class="btn btn-danger" @onclick="ProcessStoredFile"><i class="fa-light fa-upload pe-2"></i>MuatNaik Rekod Baru</button>
+                </div>
+            </div>
         </div>
     </div>
+  
 </div>
 
 
 @code {
     public bool isLoading = false;
-
+    List<RekodModel> _newList = [];
     private IBrowserFile? selectedFile;
 
-    private void HandleFileSelection(InputFileChangeEventArgs e)
+    public string Mode = string.Empty;
+    public bool adaRekod = false; public bool adaChart = false;
+    public string NamaPekerja = string.Empty;
+    public string NAMA = string.Empty;
+    public string NoStaf = string.Empty;
+    public string JumlahRekod = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Mode = _conf["Mode"]?.ToString() ?? string.Empty;
+        var authState = await myIden.GetUserAsync();
+        var user = authState.Identity as ClaimsIdentity;
+        NamaPekerja = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "";
+        NoStaf = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
+
+        if (user == null || !user.IsAuthenticated)
+        {
+            await myIden.SignOutUserAsync();
+            string baseUrl = (Mode == "Dev") ? "/SessiTamat" : "/rekodkedatangan/SessiTamat";
+            NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadFile();
+        }
+    }
+
+    private async Task LoadFile()
+    {
+        await JSRuntime.InvokeVoidAsync("loadSweetAlert");
+    }
+
+    private async Task HandleFileSelection(InputFileChangeEventArgs e)
     {
         selectedFile = e.File;
+        var _rekod = await _services.ProsesFile(selectedFile);
+        var adaTotal = _rekod?.Count() ?? 0;
+        JumlahRekod = adaTotal + " rekod";
     }
+
+    public string messageInfo = string.Empty;
+    public bool isProcessing = false; public bool isProcessing1 = false; 
+    public bool _result = false; public bool _result2 = false;
 
     private async Task ProcessStoredFile()
     {
         if (selectedFile != null && selectedFile.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
         {
-            using var reader = new StreamReader(selectedFile.OpenReadStream());
-            var content = await reader.ReadToEndAsync();
 
-            // ✅ Process content here
-            Console.WriteLine($"File content:\n{content}");
+            isLoading = true;
+
+            var _rekod = await _services.ProsesFile(selectedFile);
+            _newList = _services.ProcessRAW2Final(_rekod);
+
+            int JumRekod = _newList.Count();
+
+            LogEntry entry = new LogEntry();
+            entry.Date = DateTime.Now; // Set the date/time of the log entry
+            entry.Logs = "Read TXT files and Process "; // Set the log message
+            entry.Modules = "Upload"; // Set the module name
+            bool _ret = _services.AddLog(entry);
+
+            messageInfo = "Proses Muatnaik Data dan Kemaskini Sedang Dilakukan. Harap Bersabar";
+            StateHasChanged();
+
+            Random random = new Random();
+            int iix = random.Next(0, JumRekod);
+            //get sampling
+            string UID = _newList[iix].UserID.ToString();
+            string Employee = _newList[iix].Employee.ToString();
+            string xDate = _newList[iix].Date.ToString("yyyy-MM-dd");
+
+            LogEntry ee = new LogEntry();
+            ee.Date = DateTime.Now; ee.Logs = "Assign Value"; ee.Modules = "Upload";
+            bool _ret22 = _services.AddLog(ee);
+
+            Console.WriteLine("stage 2");
+            bool _check = await _services.CheckDuplicateResult(UID, Employee, xDate);
+
+            LogEntry entry1 = new LogEntry();
+            entry1.Date = DateTime.Now; // Set the date/time of the log entry
+            entry1.Logs = "Check Duplicate "; // Set the log message
+            entry1.Modules = "Upload"; // Set the module name
+            bool _ret1 = _services.AddLog(entry1);
+
+            if (_check == false)
+            {
+                Console.WriteLine("stage 3");
+                //if not duplicate then insert
+                bool _res = await _services.InsertIntoDBFinal(_newList);
+
+                LogEntry entry2 = new LogEntry();
+                entry2.Date = DateTime.Now; // Set the date/time of the log entry
+                entry2.Logs = "Success Insert "; // Set the log message
+                entry2.Modules = "Upload"; // Set the module name
+                bool _ret2 = _services.AddLog(entry2);
+
+                isProcessing = false;
+                if (_res == true)
+                {
+                    isProcessing1 = true;
+                    //1. Clean Data
+                    await _services.CleanDatabase1();
+                    await _services.CleanDatabase2();
+                    await _services.CleanDatabase_NOMA();
+                    await _services.CleanDatabasePBNo();
+                    await _services.CleanDatabasePBNo2();
+                    await _services.CleanDatabaseNoStaff();
+
+                    await _services.CrossCheckUpdateRekod();
+                    messageInfo = "Proses Kemaskini Maklumat Cuti Sedang Dijalankan";
+                   
+                    isLoading = false;
+                    StateHasChanged();
+
+                    _result = true;
+
+                    await _services.InsertAuditLogAsync("sysAdmin", "Uploada New Records For Reporting");
+
+                    SweetAlertResult result2 = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Proses Muat Naik Data Telah Berjaya ... ",
+                        Text = "Muat Naik Data",
+                        Icon = SweetAlertIcon.Success,
+                        ConfirmButtonText = "OK"
+                    });
+
+                }
+                else
+                {
+                    _result = false;
+                }
+            }
+            else if (_check == true)
+            {
+                isLoading = false;
+                _result2 = true;
+
+                await _services.InsertAuditLogAsync("sysAdmin", "Uploada New Records For Reporting - FAILED");
+
+                SweetAlertResult result2 = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Rekod Yang Ingin Dimuatnaik Telah Wujud. Sila Semak Semula ... ",
+                    Text = "Duplicate Data",
+                    Icon = SweetAlertIcon.Error,
+                    ConfirmButtonText = "OK"
+                });
+
+            }
+
         }
         else
         {

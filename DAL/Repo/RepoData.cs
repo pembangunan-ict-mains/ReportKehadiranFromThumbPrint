@@ -21,6 +21,17 @@ namespace DAL.Repo
         Task<IEnumerable<InfoDashboard>> GetReportForChart();
         Task<IEnumerable<tblInfoUserReport>> GetloginInfo(string nostaff);
         Task InsertAuditLogAsync(string noStaf, string eventDescription);
+
+        //for migrate
+        Task CleanDatabase1();
+        Task CleanDatabase2();
+        Task CleanDatabase_NOMA();
+        Task CleanDatabasePBNo();
+        Task CleanDatabasePBNo2();
+        Task CleanDatabaseNoStaff();
+        bool AddLog(LogEntry log);
+        Task<bool> CheckDuplicateResult(string UID, string Employee, string xDate);
+        Task<bool> InsertIntoDBFinal_BULK(DataTable dt); Task CrossCheckUpdateRekod();
     }
     public class RepoData(ServerProd serverProd, ServerDev serverDev, ServerEHR serverEhr) : IRepoData
     {
@@ -228,7 +239,6 @@ namespace DAL.Repo
                 throw new Exception(err.Message);
             }
         }
-
         public async Task CleanDatabase2()
         {
             using var conn = _serverProd.Connections();
@@ -267,8 +277,6 @@ namespace DAL.Repo
                 throw new Exception(err.Message);
             }
         }
-
-
         public async Task CleanDatabase_NOMA()
         {
             using var conn = _serverProd.Connections();
@@ -295,7 +303,6 @@ namespace DAL.Repo
             }
 
         }
-
         public async Task CleanDatabasePBNo()
         {
             using var conn = _serverProd.Connections();
@@ -324,7 +331,6 @@ namespace DAL.Repo
                 throw new Exception(err.Message);
             }
         }
-
         public async Task CleanDatabasePBNo2()
         {
             using var conn = _serverProd.Connections();
@@ -374,7 +380,375 @@ namespace DAL.Repo
             }
         }
 
+        public bool AddLog(LogEntry log)
+        {
+            using var conn = _serverProd.Connections();
+            string sql = @"insert into tbllogger(Date, Logs, Modules) values (@date, @logs, @modules)";
+            try
+            {
+                int rec = conn.Execute(sql, log);
+                return rec > 0;
+            }
+            catch (System.Exception e)
+            {
+                throw new Exception($"{e.Message}");
+            }
+        }
+
+        public async Task<bool> CheckDuplicateResult(string UID, string Employee, string xDate)
+        {
+            using var conn = _serverProd.Connections();
+            string sql = @"select count(*) from tblmainkehadiran where
+                            date = @date and employee = @employee and user_id = @userid";
+
+            try
+            {
+                var count = await conn.ExecuteScalarAsync<int>(sql, new { date = xDate, employee = Employee, userid = UID });
+                return count > 0;
+            }
+            catch (System.Exception ex)
+            {
+                return false;
+                throw new Exception(sql, ex);
+            }
+        }
+
+        //public async Task<bool> InsertIntoDBFinal_BULK(DataTable dt)
+        //{
+        //    var connstr = _serverProd.Connections();
+        //    var conn = new SqlConnection(connstr);
+        //    conn.Open();
+        //    var trans = conn.BeginTransaction();
+
+        //    try
+        //    {
+        //        using var copy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, trans);
+        //        copy.DestinationTableName = "tblMainKehadiran";
+
+        //        await copy.WriteToServerAsync(dt);
+        //        trans.Commit();
+
+        //        Console.WriteLine($"Saved record: {dt.Rows.Count}");
+        //        Console.WriteLine("Data has been saved to database!");
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+
+        //        Console.WriteLine("Failed to save data to database!");
+        //        throw new Exception($"Error save to database! {ex.Message}");
+        //    }
+        //}
+        //public async Task<bool> InsertIntoDBFinal_BULK(DataTable dt)
+        //{
+        //    // await using var conn = new SqlConnection(_serverProd.Connections());
+        //    string connStr = _serverProd.Connections().ToString();
+        //    await using var conn = new SqlConnection(connStr);
+        //    await conn.OpenAsync().ConfigureAwait(false);
+        //    await using var trans = await conn.BeginTransactionAsync().ConfigureAwait(false);
+
+        //    try
+        //    {
+        //        using var copy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, (SqlTransaction)trans)
+        //        {
+        //            DestinationTableName = "tblMainKehadiran"
+        //        };
+
+        //        await copy.WriteToServerAsync(dt).ConfigureAwait(false);
+
+        //        await trans.CommitAsync().ConfigureAwait(false);
+
+        //        Console.WriteLine($"Saved record: {dt.Rows.Count}");
+        //        Console.WriteLine("Data has been saved to database!");
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await trans.RollbackAsync().ConfigureAwait(false);
+        //        Console.WriteLine("Failed to save data to database!");
+        //        throw new Exception($"Error save to database! {ex.Message}", ex);
+        //    }
+        //}
+
+        //        public async Task<bool> InsertIntoDBFinal_BULK(DataTable dt)
+        //{
+        //    // If Connections() already returns string, no need for .ToString()
+        //        var connStr = _serverProd.Connections();  
+
+        //    await using var conn = new SqlConnection(connStr);
+        //    await conn.OpenAsync().ConfigureAwait(false);
+        //    await using var trans = await conn.BeginTransactionAsync().ConfigureAwait(false);
+
+        //    try
+        //    {
+        //        using var copy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, (SqlTransaction)trans)
+        //        {
+        //            DestinationTableName = "tblMainKehadiran"
+        //        };
+
+        //        await copy.WriteToServerAsync(dt).ConfigureAwait(false);
+
+        //        await trans.CommitAsync().ConfigureAwait(false);
+
+        //        Console.WriteLine($"Saved record: {dt.Rows.Count}");
+        //        Console.WriteLine("Data has been saved to database!");
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await trans.RollbackAsync().ConfigureAwait(false);
+        //        Console.WriteLine("Failed to save data to database!");
+        //        throw new Exception($"Error save to database! {ex.Message}", ex);
+        //    }
+        //}
+
+        public async Task<bool> InsertIntoDBFinal_BULK(DataTable dt)
+        {
+            // If Connections() already returns string, no need for .ToString()
+            string connStr = _serverProd.Connections().ConnectionString;
+
+            await using var conn = new SqlConnection(connStr);
+            await conn.OpenAsync().ConfigureAwait(false);
+            await using var trans = await conn.BeginTransactionAsync().ConfigureAwait(false);
+
+            try
+            {
+                using var copy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, (SqlTransaction)trans)
+                {
+                    DestinationTableName = "tblMainKehadiran"
+                };
+
+                await copy.WriteToServerAsync(dt).ConfigureAwait(false);
+
+                await trans.CommitAsync().ConfigureAwait(false);
+
+                Console.WriteLine($"Saved record: {dt.Rows.Count}");
+                Console.WriteLine("Data has been saved to database!");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync().ConfigureAwait(false);
+                Console.WriteLine("Failed to save data to database!");
+                throw new Exception($"Error save to database! {ex.Message}", ex);
+            }
+        }
 
 
+        string? mDate;
+        string? myDate, myId, myIdd;
+        int ii = 0;
+        string? StartT, xx1 = string.Empty;
+        string? EndT, xx2 = string.Empty;
+        DateTime startTime;
+        string sql2;
+        string? reason, JENISCUTI = string.Empty;
+        int typeLeave, checker, count;
+
+        public async Task CrossCheckUpdateRekod()
+        {
+            using var conn = _serverProd.Connections();
+            string sql = @"SELECT tmk.[Date] , tmk.Employee, tmk.LeaveType, mu.id
+                                from tblMainKehadiran tmk 
+                                inner join ehr.dbo.main_users mu on REPLACE(mu.employeeId, '0000', '') COLLATE SQL_Latin1_General_CP1_CI_AS = tmk.Employee
+                                where (tmk.LeaveType='Absent')";
+
+            //where(tmk.LeaveType is not NULL or tmk.LeaveType = 'Absent')";
+            try
+            {
+                var result = await conn.QueryAsync<Data>(sql);
+                startTime = DateTime.Now;
+                foreach (var _res in result)
+                {
+
+                    ii = ii + 1;
+
+                    mDate = Convert.ToDateTime(_res.Date.ToString()).ToString("yyyy-MM-dd");
+                    myId = _res.Employee;
+                    myIdd = _res.Id;
+
+                    //enhance kod
+                    sql2 = @"select type_leave, reason, checker, count from ehr.dbo.main_leaves 
+                                     where user_id=@user_id 
+                                     and 
+                                     @ddate between from_date and to_date";
+
+                    var result2 = await conn.QueryAsync(sql2, new { ddate = mDate, user_id = myIdd });
+
+                    if (result2.Count() > 0 || result2 != null)
+                    {
+
+                        foreach (var row in result2)
+                        {
+                            typeLeave = row.type_leave;
+                            reason = row.reason;
+                            checker = row.checker;
+                            count = row.count;
+
+
+                            switch (typeLeave)
+                            {
+                                case 1:
+                                    JENISCUTI = "Cuti Tahunan / Rehat (Klausa 2.2.) ";
+                                    break;
+                                case 2:
+                                    JENISCUTI = "Cuti Kecemasan - Hanya 1 Hari Setiap Kali Permohonan (Klausa 2.7.) ";
+                                    break;
+                                case 3:
+                                    JENISCUTI = "Cuti Sakit - Biasa (Pesakit Luar) Di Klinik Swasta (Klausa 3.1.)";
+                                    break;
+                                case 5:
+                                    JENISCUTI = "Cuti Bencana - Menyebabkan Terhalangnya Perjalanan Ke Pejabat/Tempat Kerja Mengikut Tempoh Sebenar Bencana (Klausa 6.7.)";
+                                    break;
+                                case 6:
+                                    JENISCUTI = "Cuti Bagi Urusan Kematian Keluarga Terdekat (Klausa 6.9.)";
+                                    break;
+                                case 7:
+                                    JENISCUTI = "Cuti Ihsan (Klausa 14.6-)";
+                                    break;
+                                case 8:
+                                    JENISCUTI = "Cuti Bersalin (Klausa 3.10.)";
+                                    break;
+                                case 9:
+                                    JENISCUTI = "Cuti Tanpa Gaji - Sebab Urusan Peribadi Yang Mustahak (Klausa 2.9.)";
+                                    break;
+                                case 10:
+                                    JENISCUTI = "Cuti Menghadiri Peperiksaan - Hari Yang Diperlukan Bagi Peperiksaan Sahaja (Klausa 6.4.)";
+                                    break;
+                                case 12:
+                                    JENISCUTI = "Cuti Khas Bergaji Penuh (Klausa 14.8-)";
+                                    break;
+                                case 13:
+                                    JENISCUTI = "Cuti Haji - Telah Berkhidmat Tidak Kurang Daripada 3 Tahun (Klausa 4.1.)";
+                                    break;
+                                case 14:
+                                    JENISCUTI = "Cuti Gantian - Hendaklah Diambil Dalam Tempoh 6 Bulan Daripada Tarikh Kerja Lebih Masa (Klausa 5.1.)";
+                                    break;
+                                case 15:
+                                    JENISCUTI = "Cuti Kuarantin - Pegawai Yang Dalam Perjalanan Balik Ke Malaysia Dari Luar Negara (Klausa 3.9.)";
+                                    break;
+                                case 16:
+                                    JENISCUTI = "Cuti Tanpa Rekod - Bertugas Untuk Pilihanraya Umum (Klausa 14.13-)";
+                                    break;
+                                case 17:
+                                    JENISCUTI = "Cuti Kerantina - Kerana Berlakunya Wabak Penyakit Merebak (Covid-19) (Klausa 14.12-)";
+                                    break;
+                                case 18:
+                                    JENISCUTI = "Cuti Rehat Di Luar Negara (Klausa 2.3.)";
+                                    break;
+                                case 19:
+                                    JENISCUTI = "Cuti Rehat Pegawai Yang Akan Bersara (Klausa 2.4.)";
+                                    break;
+                                case 20:
+                                    JENISCUTI = "Cuti Separuh Gaji - Sebab-sebab Kesihatan Keluarga Terdekat Bagi Tujuan Penjagaan (Klausa 2.8.)";
+                                    break;
+                                case 21:
+                                    JENISCUTI = "Cuti Sakit - Biasa/Warded (Pesakit Luar/Dalam) Daripada Hospital/Klinik Kerajaan (Klausa 3.1.) ";
+                                    break;
+                                case 22:
+                                    JENISCUTI = "Cuti Sakit Lanjutan - Cuti Separuh Gaji (Klausa 3.7.)";
+                                    break;
+                                case 24:
+                                    JENISCUTI = "Cuti Isteri Bersalin - 5 Kali Sepanjang Tempoh Perkhidmatan (Klausa 3.11.)";
+                                    break;
+                                case 25:
+                                    JENISCUTI = "Cuti Menjaga Anak (Cuti Tanpa Gaji - Bersambung Dengan Cuti Bersalin) (Klausa 3.12.)";
+                                    break;
+                                case 26:
+                                    JENISCUTI = "Cuti Menjaga Anak Yang Dikuarantin Atau Memerlukan Pengasingan (Klausa 3.13.)";
+                                    break;
+                                case 27:
+                                    JENISCUTI = "Cuti Kusta Atau Barah (Klausa 3.15.)";
+                                    break;
+                                case 28:
+                                    JENISCUTI = "Cuti Umrah - 1 Kali Sepanjang Tempoh Perkhidmatan (Klausa 4.2.)";
+                                    break;
+                                case 29:
+                                    JENISCUTI = "Cuti Menjaga Anak (Cuti Tanpa Gaji - Tidak Bersambung Dengan Cuti Bersalin) (Klausa 3.12.)";
+                                    break;
+                                case 30:
+                                    JENISCUTI = "Cuti Kecederaan (Cuti Sakit Lanjutan - Semasa Menjalankan Tugas-tugas Rasminya) (Klausa 3.14.)";
+                                    break;
+                                case 31:
+                                    JENISCUTI = "Cuti Tibi (Klausa 3.15.)";
+                                    break;
+                                case 32:
+                                    JENISCUTI = "Cuti Latihan Pasukan Sukarela (Klausa 6.1.)";
+                                    break;
+                                case 33:
+                                    JENISCUTI = "Cuti Menghadiri Latihan Atau Khemah Tahunan Pertubuhan Atau Persatuan (Klausa 6.2.)";
+                                    break;
+                                case 34:
+                                    JENISCUTI = "Cuti Menghadiri Mesyuarat, Khemah Latihan, Seminar Dan Aktiviti Sukan (Klausa 6.3.)";
+                                    break;
+                                case 35:
+                                    JENISCUTI = "Cuti Mengambil Bahagian Dalam Olahraga";
+                                    break;
+                                case 36:
+                                    JENISCUTI = "Ahli Majlis atau JawatanKuasa Pertandingan";
+                                    break;
+                                case 37:
+                                    JENISCUTI = "Cuti Gantian Rehat";
+                                    break;
+                                case 38:
+                                    JENISCUTI = "Cuti Sakit - Penyakit berjangkit";
+                                    break;
+                                case 39:
+                                    JENISCUTI = "Cuti Sakit - Warded";
+                                    break;
+                                case 40:
+                                    JENISCUTI = "Cuti Kebakaran";
+                                    break;
+                                case 45:
+                                    JENISCUTI = "Cuti Bawa Kehadapan";
+                                    break;
+                                case 46:
+                                    JENISCUTI = "Bekerja Dari Rumah";
+                                    break;
+                                case 1041:
+                                    JENISCUTI = "Cuti Tanpa Rekod - Bertugas Untuk Istana";
+                                    break;
+                                case 1042:
+                                    JENISCUTI = "Cuti Tanpa Rekod";
+                                    break;
+
+                            }
+
+                            if (!string.IsNullOrEmpty(typeLeave.ToString()) && !string.IsNullOrEmpty(reason) && !string.IsNullOrEmpty(checker.ToString()))
+                            {
+
+                                string sql3 = @"
+                                        UPDATE [tblMainKehadiran] 
+                                        SET LeaveType = @JENISCUTII, Leave = @leave, Remark = @remark
+                                        WHERE Employee = @id AND [date] = @date";
+
+                                var _result3 = conn.Execute(sql3, new
+                                {
+                                    leave = typeLeave,
+                                    remark = reason,
+                                    id = myId,
+                                    date = mDate,
+                                    JENISCUTII = JENISCUTI
+                                });
+
+                                typeLeave = 0; reason = null; myId = null; mDate = null; JENISCUTI = null;
+                            }
+
+
+
+                        }
+                    }
+                }
+            }
+            catch (System.Exception err)
+            {
+                throw new Exception(sql, err);
+
+            }
+        }
     }
 }
