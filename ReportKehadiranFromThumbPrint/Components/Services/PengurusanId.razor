@@ -1,0 +1,322 @@
+﻿@page "/PengurusanId"
+
+@layout MainLayout
+@inject IConfiguration _conf
+@inject IServices _services
+@rendermode InteractiveServer
+@* @rendermode @(new InteractiveServerRenderMode(prerender: false)) *@
+@attribute [Authorize]
+@inject IIdentityAuthenticationLib myIden
+@inject NavigationManager NavMan
+@inject IJSRuntime JSRuntime
+@inject SweetAlertService Swal
+
+
+@if (isLoading)
+{
+    <div class="loading-overlay">
+        <LoadingProgress />
+    </div>
+}
+
+<div class="container-fluid">
+    <h4 class="mb-4" style="text-align:center;">Pengurusan Id Pengguna</h4>
+    <div class="card shadow-lg">
+        <div class="card-body pe-2 py-2">
+            <div class="row mt-2 mb-2">
+                <div class="col-sm-12 col-md-12 text-end">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addModalUser">
+                        <i class="bi bi-person-add pe-2"></i>Tambah Pengguna Baru
+                    </button>
+                </div>
+            </div>
+            <div class="row mt-3 mb-2">
+                @{
+                    var i = 1;
+                }
+               @if (adaRekod == true)
+                {
+                    <h3 class="fw-bold">Senarai Nama Pengguna Sistem Rekod Kedatangan</h3>
+                    <div class="table-responsive-lg mt-5">
+                        <table class="table table-bordered table-hover table-striped align-middle text-center shadow-sm rounded-3">
+                            <thead class="table-success">
+                                <tr class="fw-bold">
+                                    <th style="width:5%">#</th>
+                                    <th style="width:10%">No. Pekerja</th>
+                                    <th style="width:25%">Nama </th>
+                                    <th style="width:35%">Unit</th>
+                                    <th style="width:5%"></th>
+                                    <th style="width:5%"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var x in _user)
+                                {
+                                    <tr>
+                                        <td>@i</td>
+                                        <td>@x.NoStaf</td>
+                                        <td class="text-start">@x.Nama</td>
+                                        <td>@x.Unit</td>
+                                        <th>
+                                            <button class="btn btn-outline-warning" @onclick="() => EditRekod(x)" title="Reset Password"><i class="bi bi-pen py-2"></i></button>
+                                        </th>
+                                        <th>
+                                            <button class="btn btn-outline-danger" @onclick="() => PadamRekod(x)" title="Padam Rekod"><i class="bi bi-trash py-2"></i></button>
+                                        </th>
+                                    </tr>
+                                     i=i+1;
+                                }
+                              
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addModalUser" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Tambah Pengguna Baru</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <EditForm Model="@newUser" FormName="AddUser" OnValidSubmit="HandleInsertAsync" >
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label">No. Staf</label>
+                        <InputText class="form-control" @bind-Value="newUser.NoStaf" />
+                        <ValidationMessage For="@(() => newUser.NoStaf)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Nama</label>
+                        <InputText class="form-control" @bind-Value="newUser.Nama" />
+                        <ValidationMessage For="@(() => newUser.Nama)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Kata Laluan</label>
+                        <InputText class="form-control" type="password" @bind-Value="newUser.Password" />
+                        <ValidationMessage For="@(() => newUser.Password)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Unit</label>
+                        <InputText class="form-control" @bind-Value="newUser.Unit" />
+                        <ValidationMessage For="@(() => newUser.Unit)" />
+                    </div>
+
+                  
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-success"><i class="bi bi-floppy2-fill pe-2"></i>Simpan Rekod</button>
+                    </div>
+              </EditForm>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+               
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public bool isLoading = false;
+    public string Mode = string.Empty;
+    public bool adaRekod = false; public bool adaChart = false;
+    public string NamaPekerja = string.Empty;
+    public string NAMA = string.Empty;
+    public string NoStaf = string.Empty;
+    public string JumlahRekod = string.Empty;
+    private tblInfoUserReport newUser = new();
+    IEnumerable<tblInfoUserReport> _user = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Mode = _conf["Mode"]?.ToString() ?? string.Empty;
+        var authState = await myIden.GetUserAsync();
+        var user = authState.Identity as ClaimsIdentity;
+        NamaPekerja = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "";
+        NoStaf = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
+
+        if (user == null || !user.IsAuthenticated)
+        {
+            await myIden.SignOutUserAsync();
+            string baseUrl = (Mode == "Dev") ? "/SessiTamat" : "/rekodkedatangan/SessiTamat";
+            NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadFile();
+            await LoadDataUser();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadFile()
+    {
+        await JSRuntime.InvokeVoidAsync("loadSweetAlert");
+    }
+
+
+    private async Task LoadDataUser()
+    {
+        var ada = await _services.GetAllUsersAsync();
+        if (ada.Any())
+        {
+            _user = ada;adaRekod = true;
+        }       
+    }
+
+    private async Task HandleInsertAsync(EditContext context)
+    {
+        try
+        {
+            if (!context.Validate())
+                return;
+
+            var pass = BCrypt.Net.BCrypt.EnhancedHashPassword(newUser.Password);
+            newUser.Password = pass;
+            newUser.Status = 1;
+
+            var ada = await _services.GetUserByNoStaffAsync(newUser.NoStaf);
+            if (ada == false)
+            {
+                await _services.AddUserAsync(newUser);
+                newUser = new tblInfoUserReport();
+
+                await JSRuntime.InvokeVoidAsync("hideModal", "#addModalUser");
+
+                SweetAlertResult result2 = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Rekod Pengguna Baru Berjaya Disimpan ... ",
+                    Text = "Simpan Maklumat Pengguna",
+                    Icon = SweetAlertIcon.Success,
+                    ConfirmButtonText = "OK"
+                });
+                string baseUrl = (Mode == "Dev") ? "/PengurusanId" : "/rekodkedatangan/PengurusanId";
+                NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+            }
+            else
+            {
+                newUser = new tblInfoUserReport();
+                SweetAlertResult result2 = await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Rekod Pengguna Telah Wujud ... ",
+                    Text = "Simpan Maklumat Pengguna",
+                    Icon = SweetAlertIcon.Error,
+                    ConfirmButtonText = "OK"
+                });
+            }
+            StateHasChanged();
+        }
+        catch(System.Exception err)
+        {
+            throw new Exception(err.Message);
+        }
+    }
+
+    private async Task PadamRekod(tblInfoUserReport ee)
+    {
+        try
+        {
+            var id = ee.Id;
+
+            if (string.IsNullOrEmpty(id.ToString()))
+                return;
+
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Adakah anda pasti untuk memadam rekod ini ?",
+                Text = "Info",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Ya",
+                CancelButtonText = "Tidak"
+            });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                var ada = await _services.DeleteUserAsync(id);
+                if (ada == true)
+                {
+                    await JSRuntime.InvokeVoidAsync("hideModal", "#addModalUser");
+
+                    SweetAlertResult resultX = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Rekod Pengguna Berjaya Dipadam ?",
+                        Text = "Padam Rekod",
+                        Icon = SweetAlertIcon.Success,
+                        ShowCancelButton = false,
+                        ConfirmButtonText = "Ok"
+                    });
+
+                    string baseUrl = (Mode == "Dev") ? "/PengurusanId" : "/rekodkedatangan/PengurusanId";
+                    NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+                }
+            }
+        }
+        catch(System.Exception err)
+        {
+            throw new Exception(err.Message);
+        }
+    }
+
+    private async Task EditRekod(tblInfoUserReport ee)
+    {
+        try
+        {
+            var id = ee.Id;
+
+            if (string.IsNullOrEmpty(id.ToString()))
+                return;
+
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Adakah anda pasti untuk RESET katalaluan rekod ini ?",
+                Text = "Info",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Ya",
+                CancelButtonText = "Tidak"
+            });
+
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                var hashpassword = BCrypt.Net.BCrypt.EnhancedHashPassword("Password@2025");
+                var res = await _services.ResetPasswordAsync(id, hashpassword);
+
+                if (res == true)
+                {
+                    SweetAlertResult resultX = await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Katalaluan Berjaya Dikemaskini ?",
+                        Text = "Kemaskini Rekod",
+                        Icon = SweetAlertIcon.Success,
+                        ShowCancelButton = false,
+                        ConfirmButtonText = "Ok"
+                    });
+
+                    string baseUrl = (Mode == "Dev") ? "/PengurusanId" : "/rekodkedatangan/PengurusanId";
+                    NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+                }
+            }
+        }
+        catch (System.Exception err)
+        {
+            throw new Exception(err.Message);
+        }
+        }
+    }
+}

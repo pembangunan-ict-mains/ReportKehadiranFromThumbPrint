@@ -391,7 +391,7 @@
         }
     }
 
-   
+
     protected override async Task OnParametersSetAsync()
     {
         myBulan = Convert.ToInt32(Bulan); myTahun = Convert.ToInt32(Tahun);
@@ -517,6 +517,7 @@
         }
         catch(System.Exception err)
         {
+            Console.WriteLine(err.Message);
             throw;
         }
     }

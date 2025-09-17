@@ -48,6 +48,8 @@ builder.Services.AddScoped<IRepoData, RepoData>();
 builder.Services.AddScoped<IServices, Services>();
 builder.Services.AddScoped<IReportRepo, ReportRepo>();
 builder.Services.AddScoped<ImyUtils, myUtils>();
+builder.Services.AddScoped<IUserRepo, UserRepo>();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

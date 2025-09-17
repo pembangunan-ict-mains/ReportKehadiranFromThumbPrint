@@ -187,7 +187,8 @@
         }
         catch(System.Exception err)
         {
-            throw;
+            throw new Exception(err.Message);
+
         }
     }
 

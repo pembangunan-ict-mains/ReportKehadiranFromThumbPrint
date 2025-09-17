@@ -13,71 +13,75 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
 
-    <div class="container-fluid d-flex justify-content-center align-items-center min-vh-100 p-3">
-        <div class="login-container p-4" style="width: 100%; max-width: 500px;">
+    <div class="page-background">
+        <div class="container-fluid d-flex justify-content-center align-items-center min-vh-100 p-3">
+            <div class="login-container p-4" style="width: 100%; max-width: 500px;">
 
-            <!-- Logo and Title Section -->
-            <div class="logo-section">
-             @*    <div class="logo-placeholder pulse-animation">
+                <!-- Logo and Title Section -->
+                <div class="logo-section">
+                    @*    <div class="logo-placeholder pulse-animation">
                     <i class="fas fa-mosque"></i>
                 </div> *@
-                <h5 class="main-title mb-2">MAJLIS AGAMA ISLAM NEGERI SEMBILAN</h5>
-                <h6 class="sub-title">Maklumat Rekod Kehadiran Pekerja</h6>
-                <h7 class="sub-title">Unit Pentadbiran</h7>
-            </div>
-
-            <!-- Login Form -->
-            <form id="loginForm">
-                <!-- User ID Input -->
-                <div class="modern-input-group">
-                    <i class="fas fa-user input-icon"></i>
-                    <InputText @onclick="reset" type="text" @bind-Value="loginModel.UserId"
-                               class="form-control modern-input"
-                               id="userId"
-                               placeholder=" "
-                               required
-                               autofocus />
-                    <label class="floating-label">ID Pengguna Cth: XXXX</label>
+                    <h5 class="main-title mb-2">MAJLIS AGAMA ISLAM NEGERI SEMBILAN</h5>
+                    <h6 class="sub-title">Maklumat Rekod Kehadiran Pekerja</h6>
+                    <h7 class="sub-title">Unit Pentadbiran</h7>
                 </div>
 
-                <!-- Password Input -->
-                <div class="modern-input-group">
-                    <i class="fas fa-key input-icon"></i>
-                    <InputText type="password" @bind-Value="loginModel.Password"
-                               class="form-control modern-input"
-                               id="password"
-                               placeholder=" "
-                               required />
-
-                    <label class="floating-label">Katalaluan</label>
-                    <!-- Eye icon positioned at the end of input -->
-                    <i id="toggleIcon" onclick="togglePassword()"
-                       class="fa-regular fa-eye-slash position-absolute end-0 top-50 translate-middle-y me-3"
-                       style="cursor: pointer;"></i>
-                </div>
-
-                <!-- Alert Message (Hidden by default) -->
-                @if (noError == true)
-                {
-                    <div id="alertMessage" class="alert-message">
-                        @alertMessage
+                <!-- Login Form -->
+         
+                    <!-- User ID Input -->
+                    <div class="modern-input-group">
+                        <i class="fas fa-user input-icon"></i>
+                        <InputText @onclick="reset" type="text" @bind-Value="loginModel.UserId"
+                                   class="form-control modern-input"
+                                   id="userId"
+                                   placeholder=" "
+                                   required
+                                   autofocus />
+                        <label class="floating-label">ID Pengguna Cth: XXXX</label>
                     </div>
-                }
-              
 
-                <!-- Login Button -->
-                <button type="submit" class="btn login-btn w-100 mb-3">
+                    <!-- Password Input -->
+                    <div class="modern-input-group">
+                        <i class="fas fa-key input-icon"></i>
+                        <InputText type="password" @bind-Value="loginModel.Password"
+                                   class="form-control modern-input"
+                                   id="password"
+                                   placeholder=" "
+                                   required />
+
+                        <label class="floating-label">Katalaluan</label>
+                        <!-- Eye icon positioned at the end of input -->
+                        <i id="toggleIcon" onclick="togglePassword()"
+                           class="fa-regular fa-eye-slash position-absolute end-0 top-50 translate-middle-y me-3"
+                           style="cursor: pointer;"></i>
+                    </div>
+
+                    <!-- Alert Message (Hidden by default) -->
+                    @if (noError == true)
+                    {
+                        <div id="alertMessage" class="alert-message">
+                            @alertMessage
+                        </div>
+                    }
+
+
+                    <!-- Login Button -->
+                <button type="submit" class="btn login-btn w-100 mb-3" >
                     <i class="fas fa-sign-in-alt me-2"></i>
                     Log Masuk
                 </button>
 
-                <!-- Version Info -->
-                <div class="version-info">
-                    Version 1.0.0
-                </div>
-            </form>
+
+                    <!-- Version Info -->
+                    <div class="version-info">
+                        Version 1.0.0
+                    </div>
+
+            </div>
         </div>
     </div>
+
 </EditForm>
 
 @code {
@@ -120,7 +124,7 @@
             var _getinfo = await _service.GetloginInfo("MA" + loginModel.UserId);
             if (_getinfo.Any())
             {
-                string hashedPassword = BCrypt.Net.BCrypt.EnhancedHashPassword("Password@2025");
+               // string hashedPassword = BCrypt.Net.BCrypt.EnhancedHashPassword("Password@2025");
 
                 var xx = _getinfo.FirstOrDefault();
                 var pass = xx?.Password; var Nama = xx?.Nama;

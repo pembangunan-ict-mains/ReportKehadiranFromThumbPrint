@@ -200,7 +200,8 @@ namespace DAL.Repo
 
 
         //-------------------------
-        string newString;
+        string newString = string.Empty;
+
         public async Task CleanDatabase1()
         {
             using var conn = _serverProd.Connections();
@@ -542,10 +543,10 @@ namespace DAL.Repo
         string? mDate;
         string? myDate, myId, myIdd;
         int ii = 0;
-        string? StartT, xx1 = string.Empty;
+        string? StartT = string.Empty; string xx1 = string.Empty;
         string? EndT, xx2 = string.Empty;
         DateTime startTime;
-        string sql2;
+        string sql2 = string.Empty;
         string? reason, JENISCUTI = string.Empty;
         int typeLeave, checker, count;
 

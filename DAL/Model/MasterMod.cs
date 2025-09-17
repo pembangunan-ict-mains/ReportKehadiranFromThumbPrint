@@ -100,12 +100,22 @@ namespace DAL.Model
     public class tblInfoUserReport
     {
         public int Id { get; set; }
+
+        [Required(ErrorMessage = "No Staf diperlukan")]
         public string NoStaf { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Nama diperlukan")]
         public string Nama { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Kata laluan diperlukan")]
         public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Unit diperlukan")]
         public string Unit { get; set; } = string.Empty;
-        public int Status { get; set; }
+
+        public int Status { get; set; } = 1;
     }
+
 
     public class tblInfoAuditLog
     {

@@ -34,7 +34,7 @@ namespace SAL
         Task CleanDatabase2();
         Task CleanDatabase_NOMA();
         Task CleanDatabasePBNo();
-       Task CleanDatabasePBNo2();
+        Task CleanDatabasePBNo2();
         Task CleanDatabaseNoStaff();
 
         bool AddLog(LogEntry log);
@@ -43,11 +43,20 @@ namespace SAL
 
         Task CrossCheckUpdateRekod();
 
-        }
-    public class Services(IRepoData repo, IReportRepo report) : IServices
+        Task<int> AddUserAsync(tblInfoUserReport user);
+        Task<bool> UpdateUserAsync(tblInfoUserReport user);
+        Task<bool> DeleteUserAsync(int id);
+        Task<IEnumerable<tblInfoUserReport>> GetAllUsersAsync();
+        Task<tblInfoUserReport?> GetUserByIdAsync(int id);
+        Task<bool> GetUserByNoStaffAsync(string nostaff);
+        Task<bool> ResetPasswordAsync(int id, string plainPassword);
+
+    }
+    public class Services(IRepoData repo, IReportRepo report, IUserRepo user) : IServices
     {
         private readonly IRepoData _repo = repo;
         private readonly IReportRepo _report = report;
+        private readonly IUserRepo _user = user;
 
         public async Task<bool> CheckLoginAsync(string uid, string password)
         {
@@ -114,7 +123,7 @@ namespace SAL
 
         public async Task<IEnumerable<InfoReport>> GetInfoSummary_TiadaLogkeluar(int Bulan, int Tahun)
         {
-            return await _report.GetInfoSummary_TiadaLogkeluar(Bulan,Tahun);
+            return await _report.GetInfoSummary_TiadaLogkeluar(Bulan, Tahun);
         }
         public async Task<IEnumerable<InfoReportDetail>> GetInfoDetails_TiadaLogkeluar(int Bulan, int Tahun)
         {
@@ -128,7 +137,7 @@ namespace SAL
         }
         public async Task<IEnumerable<InfoReportDetail>> GetInfoDetail_TiadaInfoMIA(int Bulan, int Tahun)
         {
-            return await _report.GetInfoDetail_TiadaInfoMIA(Bulan , Tahun);
+            return await _report.GetInfoDetail_TiadaInfoMIA(Bulan, Tahun);
         }
 
         public async Task<IEnumerable<tblInfoUserReport>> GetloginInfo(string nostaff)
@@ -145,7 +154,7 @@ namespace SAL
 
         public async Task CleanDatabase1()
         {
-             await _repo.CleanDatabase1();
+            await _repo.CleanDatabase1();
         }
         public async Task CleanDatabase2()
         {
@@ -391,7 +400,37 @@ namespace SAL
             await _repo.CrossCheckUpdateRekod();
         }
 
+        //---- user operasi
+        public async Task<int> AddUserAsync(tblInfoUserReport user)
+        {
+            return await _user.AddUserAsync(user);
+        }
 
+        public async Task<bool> UpdateUserAsync(tblInfoUserReport user)
+        {
+            return await _user.UpdateUserAsync(user);
+        }
+        public async Task<bool> DeleteUserAsync(int id)
+        {
+            return await _user.DeleteUserAsync(id);
+        }
+        public async Task<IEnumerable<tblInfoUserReport>> GetAllUsersAsync()
+        {
+            return await _user.GetAllUsersAsync();
+        }
+        public async Task<tblInfoUserReport?> GetUserByIdAsync(int id)
+        {
+            return await _user.GetUserByIdAsync(id);
+        }
 
+        public async Task<bool> GetUserByNoStaffAsync(string nostaff)
+        {
+            return await _user.GetUserByNoStaffAsync(nostaff);
+        }
+
+        public async Task<bool> ResetPasswordAsync(int id, string plainPassword)
+        {
+            return await _user.ResetPasswordAsync(id, plainPassword);
+        }
     }
 }
