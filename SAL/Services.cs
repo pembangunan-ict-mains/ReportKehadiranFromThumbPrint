@@ -50,6 +50,7 @@ namespace SAL
         Task<tblInfoUserReport?> GetUserByIdAsync(int id);
         Task<bool> GetUserByNoStaffAsync(string nostaff);
         Task<bool> ResetPasswordAsync(int id, string plainPassword);
+        Task<List<string>> GetDistinctUnitsAsync();
 
     }
     public class Services(IRepoData repo, IReportRepo report, IUserRepo user) : IServices
@@ -341,7 +342,6 @@ namespace SAL
         }
         DataTable AssignDataTble(IEnumerable<RekodModel> records, DataTable dt)
         {
-
             foreach (var record in records)
             {
                 DataRow row = dt.NewRow();
@@ -381,8 +381,6 @@ namespace SAL
 
                 dt.Rows.Add(row);
             }
-
-
             return dt;
         }
 
@@ -427,10 +425,14 @@ namespace SAL
         {
             return await _user.GetUserByNoStaffAsync(nostaff);
         }
-
         public async Task<bool> ResetPasswordAsync(int id, string plainPassword)
         {
             return await _user.ResetPasswordAsync(id, plainPassword);
+        }
+
+        public async Task<List<string>> GetDistinctUnitsAsync()
+        {
+            return await _report.GetDistinctUnitsAsync();
         }
     }
 }

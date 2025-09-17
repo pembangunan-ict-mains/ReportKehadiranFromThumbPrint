@@ -45,8 +45,8 @@
                                     <th style="width:10%">No. Pekerja</th>
                                     <th style="width:25%">Nama </th>
                                     <th style="width:35%">Unit</th>
-                                    <th style="width:5%"></th>
-                                    <th style="width:5%"></th>
+                                    <th style="width:5%">Reset</th>
+                                    <th style="width:5%">Padam</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -54,9 +54,9 @@
                                 {
                                     <tr>
                                         <td>@i</td>
-                                        <td>@x.NoStaf</td>
-                                        <td class="text-start">@x.Nama</td>
-                                        <td>@x.Unit</td>
+                                        <td class="fw-bold">@x.NoStaf</td>
+                                        <td class="text-start fw-bold">@x.Nama</td>
+                                        <td class="fw-bold"><span style="color:red;">@x.Unit</span></td>
                                         <th>
                                             <button class="btn btn-outline-warning" @onclick="() => EditRekod(x)" title="Reset Password"><i class="bi bi-pen py-2"></i></button>
                                         </th>
@@ -108,7 +108,14 @@
 
                     <div class="mb-3">
                         <label class="form-label">Unit</label>
-                        <InputText class="form-control" @bind-Value="newUser.Unit" />
+                       @*  <InputText class="form-control" @bind-Value="newUser.Unit" /> *@
+                            <select class="form-select" @bind="newUser.Unit">
+                                <option value="">Pilih Unit</option>
+                               @foreach(var unit in _listUnit)
+                                {
+                                <option class="fw-bold" value="@unit">@unit</option>
+                                }
+                            </select>
                         <ValidationMessage For="@(() => newUser.Unit)" />
                     </div>
 
@@ -137,6 +144,7 @@
     public string JumlahRekod = string.Empty;
     private tblInfoUserReport newUser = new();
     IEnumerable<tblInfoUserReport> _user = [];
+    public List<string> _listUnit = new List<string>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,6 +168,7 @@
         {
             await LoadFile();
             await LoadDataUser();
+            _listUnit = await _services.GetDistinctUnitsAsync();
             StateHasChanged();
         }
     }
@@ -168,7 +177,6 @@
     {
         await JSRuntime.InvokeVoidAsync("loadSweetAlert");
     }
-
 
     private async Task LoadDataUser()
     {
@@ -318,5 +326,5 @@
             throw new Exception(err.Message);
         }
         }
-    }
+    
 }

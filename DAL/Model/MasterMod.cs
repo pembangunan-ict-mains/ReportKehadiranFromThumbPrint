@@ -108,7 +108,10 @@ namespace DAL.Model
         public string Nama { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Kata laluan diperlukan")]
+        [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$",
+     ErrorMessage = "Katalaluan mesti sekurang-kurangnya 8 aksara dan mengandungi huruf, nombor, dan aksara khas.")]
         public string Password { get; set; } = string.Empty;
+
 
         [Required(ErrorMessage = "Unit diperlukan")]
         public string Unit { get; set; } = string.Empty;

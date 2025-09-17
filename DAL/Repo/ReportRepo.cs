@@ -1,6 +1,7 @@
 ﻿using DAL.BaseConn;
 using DAL.Model;
 using Dapper;
+using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +22,7 @@ namespace DAL.Repo
         Task<IEnumerable<InfoReportDetail>> GetInfoDetails_TiadaLogkeluar(int Bulan, int Tahun);
         Task<IEnumerable<InfoReport>> GetInfoSummary_TiadaInfoMIA(int Bulan, int Tahun);
         Task<IEnumerable<InfoReportDetail>> GetInfoDetail_TiadaInfoMIA(int Bulan, int Tahun);
+        Task<List<string>> GetDistinctUnitsAsync();
 
     }
     public class ReportRepo(ServerProd serverProd, ServerDev serverDev, ServerEHR serverEhr) : IReportRepo
@@ -336,6 +338,13 @@ namespace DAL.Repo
         }
 
 
+        public async Task<List<string>> GetDistinctUnitsAsync()
+        {
+           const string query = @"SELECT DISTINCT(unit) as Unit FROM view_butiran_staf ORDER BY unit ASC";
+
+            var units = await _serverEhr.Connections().QueryAsync<string>(query);
+            return units.ToList();
+        }
 
 
 

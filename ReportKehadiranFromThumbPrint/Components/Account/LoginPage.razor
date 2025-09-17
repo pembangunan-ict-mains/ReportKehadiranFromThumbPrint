@@ -124,17 +124,24 @@
             var _getinfo = await _service.GetloginInfo("MA" + loginModel.UserId);
             if (_getinfo.Any())
             {
-               // string hashedPassword = BCrypt.Net.BCrypt.EnhancedHashPassword("Password@2025");
+                // string hashedPassword = BCrypt.Net.BCrypt.EnhancedHashPassword("Password@2025");
 
                 var xx = _getinfo.FirstOrDefault();
                 var pass = xx?.Password; var Nama = xx?.Nama;
                 bool _output = BCrypt.Net.BCrypt.EnhancedVerify(loginModel.Password, pass);
+                var statuslog = _getinfo.FirstOrDefault()?.Status;
 
-                if (xx?.NoStaf == "MA" + loginModel.UserId && _output == true)
+                if (xx?.NoStaf == "MA" + loginModel.UserId && _output == true  && statuslog == 2)
                 {
                     await _service.InsertAuditLogAsync("MA" + loginModel.UserId, "Login Into Sistem");
                     await myIden.SignInUserAsync(loginModel.UserId, Nama ?? string.Empty , "User", "All");
                     string baseUrl = (Mode == "Dev") ? "/MainPage" : "/rekodkedatangan/MainPage";
+                    NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+                }
+                else if (xx?.NoStaf == "MA" + loginModel.UserId && _output == true && statuslog == 1)
+                {
+                    await myIden.SignInUserAsync(loginModel.UserId, Nama ?? string.Empty, "User", "All");
+                    string baseUrl = (Mode == "Dev") ? "/TukarPassword" : "/rekodkedatangan/TukarPassword";
                     NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
                 }
             }

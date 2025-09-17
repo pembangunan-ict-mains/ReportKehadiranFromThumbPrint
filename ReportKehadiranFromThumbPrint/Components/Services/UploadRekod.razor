@@ -92,114 +92,129 @@
 
     private async Task ProcessStoredFile()
     {
-        if (selectedFile != null && selectedFile.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
         {
+            Title = "Adakah anda pasti untuk MUATNAIK data baru ?",
+            Text = "Info",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Ya",
+            CancelButtonText = "Tidak"
+        });
 
-            isLoading = true;
-
-            var _rekod = await _services.ProsesFile(selectedFile);
-            _newList = _services.ProcessRAW2Final(_rekod);
-
-            int JumRekod = _newList.Count();
-
-            LogEntry entry = new LogEntry();
-            entry.Date = DateTime.Now; // Set the date/time of the log entry
-            entry.Logs = "Read TXT files and Process "; // Set the log message
-            entry.Modules = "Upload"; // Set the module name
-            bool _ret = _services.AddLog(entry);
-
-            messageInfo = "Proses Muatnaik Data dan Kemaskini Sedang Dilakukan. Harap Bersabar";
-            StateHasChanged();
-
-            Random random = new Random();
-            int iix = random.Next(0, JumRekod);
-            //get sampling
-            string UID = _newList[iix].UserID.ToString();
-            string Employee = _newList[iix].Employee.ToString();
-            string xDate = _newList[iix].Date.ToString("yyyy-MM-dd");
-
-            LogEntry ee = new LogEntry();
-            ee.Date = DateTime.Now; ee.Logs = "Assign Value"; ee.Modules = "Upload";
-            bool _ret22 = _services.AddLog(ee);
-
-            Console.WriteLine("stage 2");
-            bool _check = await _services.CheckDuplicateResult(UID, Employee, xDate);
-
-            LogEntry entry1 = new LogEntry();
-            entry1.Date = DateTime.Now; // Set the date/time of the log entry
-            entry1.Logs = "Check Duplicate "; // Set the log message
-            entry1.Modules = "Upload"; // Set the module name
-            bool _ret1 = _services.AddLog(entry1);
-
-            if (_check == false)
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            if (selectedFile != null && selectedFile.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("stage 3");
-                //if not duplicate then insert
-                bool _res = await _services.InsertIntoDBFinal(_newList);
 
-                LogEntry entry2 = new LogEntry();
-                entry2.Date = DateTime.Now; // Set the date/time of the log entry
-                entry2.Logs = "Success Insert "; // Set the log message
-                entry2.Modules = "Upload"; // Set the module name
-                bool _ret2 = _services.AddLog(entry2);
+                isLoading = true;
 
-                isProcessing = false;
-                if (_res == true)
+                var _rekod = await _services.ProsesFile(selectedFile);
+                _newList = _services.ProcessRAW2Final(_rekod);
+
+                int JumRekod = _newList.Count();
+
+                LogEntry entry = new LogEntry();
+                entry.Date = DateTime.Now; // Set the date/time of the log entry
+                entry.Logs = "Read TXT files and Process "; // Set the log message
+                entry.Modules = "Upload"; // Set the module name
+                bool _ret = _services.AddLog(entry);
+
+                messageInfo = "Proses Muatnaik Data dan Kemaskini Sedang Dilakukan. Harap Bersabar";
+                StateHasChanged();
+
+                Random random = new Random();
+                int iix = random.Next(0, JumRekod);
+                //get sampling
+                string UID = _newList[iix].UserID.ToString();
+                string Employee = _newList[iix].Employee.ToString();
+                string xDate = _newList[iix].Date.ToString("yyyy-MM-dd");
+
+                LogEntry ee = new LogEntry();
+                ee.Date = DateTime.Now; ee.Logs = "Assign Value"; ee.Modules = "Upload";
+                bool _ret22 = _services.AddLog(ee);
+
+                Console.WriteLine("stage 2");
+                bool _check = await _services.CheckDuplicateResult(UID, Employee, xDate);
+
+                LogEntry entry1 = new LogEntry();
+                entry1.Date = DateTime.Now; // Set the date/time of the log entry
+                entry1.Logs = "Check Duplicate "; // Set the log message
+                entry1.Modules = "Upload"; // Set the module name
+                bool _ret1 = _services.AddLog(entry1);
+
+                if (_check == false)
                 {
-                    isProcessing1 = true;
-                    //1. Clean Data
-                    await _services.CleanDatabase1();
-                    await _services.CleanDatabase2();
-                    await _services.CleanDatabase_NOMA();
-                    await _services.CleanDatabasePBNo();
-                    await _services.CleanDatabasePBNo2();
-                    await _services.CleanDatabaseNoStaff();
+                    Console.WriteLine("stage 3");
+                    //if not duplicate then insert
+                    bool _res = await _services.InsertIntoDBFinal(_newList);
 
-                    await _services.CrossCheckUpdateRekod();
-                    messageInfo = "Proses Kemaskini Maklumat Cuti Sedang Dijalankan";
-                   
-                    isLoading = false;
-                    StateHasChanged();
+                    LogEntry entry2 = new LogEntry();
+                    entry2.Date = DateTime.Now; // Set the date/time of the log entry
+                    entry2.Logs = "Success Insert "; // Set the log message
+                    entry2.Modules = "Upload"; // Set the module name
+                    bool _ret2 = _services.AddLog(entry2);
 
-                    _result = true;
+                    isProcessing = false;
+                    if (_res == true)
+                    {
+                        isProcessing1 = true;
+                        //1. Clean Data
+                        await _services.CleanDatabase1();
+                        await _services.CleanDatabase2();
+                        await _services.CleanDatabase_NOMA();
+                        await _services.CleanDatabasePBNo();
+                        await _services.CleanDatabasePBNo2();
+                        await _services.CleanDatabaseNoStaff();
 
-                    await _services.InsertAuditLogAsync("sysAdmin", "Uploada New Records For Reporting");
+                        await _services.CrossCheckUpdateRekod();
+                        messageInfo = "Proses Kemaskini Maklumat Cuti Sedang Dijalankan";
+
+                        isLoading = false;
+                        StateHasChanged();
+
+                        _result = true;
+
+                        await _services.InsertAuditLogAsync("sysAdmin", "Uploada New Records For Reporting");
+
+                        SweetAlertResult result2 = await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Proses Muat Naik Data Telah Berjaya ... ",
+                            Text = "Muat Naik Data",
+                            Icon = SweetAlertIcon.Success,
+                            ConfirmButtonText = "OK"
+                        });
+
+                    }
+                    else
+                    {
+                        _result = false;
+                    }
+                }
+                else if (_check == true)
+                {
+                    isLoading = false;StateHasChanged();
+                    _result2 = true;
+
+                    await _services.InsertAuditLogAsync("sysAdmin", "Uploada New Records For Reporting - FAILED");
 
                     SweetAlertResult result2 = await Swal.FireAsync(new SweetAlertOptions
                     {
-                        Title = "Proses Muat Naik Data Telah Berjaya ... ",
-                        Text = "Muat Naik Data",
-                        Icon = SweetAlertIcon.Success,
+                        Title = "Rekod Yang Ingin Dimuatnaik Telah Wujud. Sila Semak Semula ... ",
+                        Text = "Duplicate Data",
+                        Icon = SweetAlertIcon.Error,
                         ConfirmButtonText = "OK"
                     });
 
+                    string baseUrl = (Mode == "Dev") ? "/UploadRekod" : "/rekodkedatangan/UploadRekod";
+                    NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
                 }
-                else
-                {
-                    _result = false;
-                }
+
             }
-            else if (_check == true)
+            else
             {
-                isLoading = false;
-                _result2 = true;
-
-                await _services.InsertAuditLogAsync("sysAdmin", "Uploada New Records For Reporting - FAILED");
-
-                SweetAlertResult result2 = await Swal.FireAsync(new SweetAlertOptions
-                {
-                    Title = "Rekod Yang Ingin Dimuatnaik Telah Wujud. Sila Semak Semula ... ",
-                    Text = "Duplicate Data",
-                    Icon = SweetAlertIcon.Error,
-                    ConfirmButtonText = "OK"
-                });
-
+                Console.WriteLine("No valid .txt file selected.");
             }
-
-        }
-        else
-        {
-            Console.WriteLine("No valid .txt file selected.");
         }
     }
 }
