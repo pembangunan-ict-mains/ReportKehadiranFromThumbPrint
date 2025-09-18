@@ -302,19 +302,10 @@
 
             if (!string.IsNullOrEmpty(result.Value))
             {
-                var hashpassword = BCrypt.Net.BCrypt.EnhancedHashPassword("Password@2025");
-                var res = await _services.ResetPasswordAsync(id, hashpassword);
-
-                if (res == true)
+                bool res = await _services.ResetPasswordAsync(id, BCrypt.Net.BCrypt.EnhancedHashPassword("Password@2025"));
+                if (res)
                 {
-                    SweetAlertResult resultX = await Swal.FireAsync(new SweetAlertOptions
-                    {
-                        Title = "Katalaluan Berjaya Dikemaskini ?",
-                        Text = "Kemaskini Rekod",
-                        Icon = SweetAlertIcon.Success,
-                        ShowCancelButton = false,
-                        ConfirmButtonText = "Ok"
-                    });
+                    SweetAlertResult resultX = await Swal.FireAsync(new SweetAlertOptions{ Title = "Katalaluan Berjaya Dikemaskini ?",Text = "Kemaskini Rekod",Icon = SweetAlertIcon.Success, ShowCancelButton = false,ConfirmButtonText = "Ok" });
 
                     string baseUrl = (Mode == "Dev") ? "/PengurusanId" : "/rekodkedatangan/PengurusanId";
                     NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);

@@ -18,6 +18,7 @@ namespace DAL.Repo
         Task<tblInfoUserReport?> GetUserByIdAsync(int id);
         Task<bool> GetUserByNoStaffAsync(string nostaff);
         Task<bool> ResetPasswordAsync(int id, string plainPassword);
+        Task<bool> KemaskiniPasswordBaru(string id, string password);
     }
     public class UserRepo(ServerProd serverProd, ServerDev serverDev, ServerEHR serverEhr) :IUserRepo
     {
@@ -83,7 +84,7 @@ namespace DAL.Repo
 
         public async Task<bool> ResetPasswordAsync(int id, string plainPassword)
         {
-            const string sql = @" UPDATE tblInfoUserReport SET Password = @Password WHERE Id = @Id";
+            const string sql = @" UPDATE tblInfoUserReport SET Password = @Password, status = 1 WHERE Id = @Id";
 
             var rowsAffected = await _serverProd
                 .Connections()
@@ -91,6 +92,16 @@ namespace DAL.Repo
 
             return rowsAffected > 0;
         }
+
+        public async Task<bool> KemaskiniPasswordBaru(string id, string password)
+        {
+            string sql = @"update tblInfoUserReport set password = @password, status = 2 where id = @id";
+            var res = await _serverProd.Connections().ExecuteAsync(sql, new { id = id, password = password });
+            return res > 0;
+        }
+
+
+
 
 
     }

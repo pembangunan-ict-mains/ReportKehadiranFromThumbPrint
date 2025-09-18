@@ -140,8 +140,9 @@
                 }
                 else if (xx?.NoStaf == "MA" + loginModel.UserId && _output == true && statuslog == 1)
                 {
+                    var idd = _getinfo.FirstOrDefault()?.Id ?? 0; var id = EncryptionHelper.Encode(idd.ToString());
                     await myIden.SignInUserAsync(loginModel.UserId, Nama ?? string.Empty, "User", "All");
-                    string baseUrl = (Mode == "Dev") ? "/TukarPassword" : "/rekodkedatangan/TukarPassword";
+                    string baseUrl = (Mode == "Dev") ? $"/TukarPassword/{id}" : $"/rekodkedatangan/TukarPassword/{id}";
                     NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
                 }
             }

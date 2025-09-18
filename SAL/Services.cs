@@ -5,6 +5,7 @@ using System.Data;
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace SAL
 {
@@ -28,6 +29,7 @@ namespace SAL
         Task<IEnumerable<tblInfoUserReport>> GetloginInfo(string nostaff);
         Task InsertAuditLogAsync(string noStaf, string eventDescription);
         List<RekodModel> ProcessRAW2Final(List<string> records);
+        bool IsPasswordValid(string password);
 
         //for migrate
         Task CleanDatabase1();
@@ -51,6 +53,7 @@ namespace SAL
         Task<bool> GetUserByNoStaffAsync(string nostaff);
         Task<bool> ResetPasswordAsync(int id, string plainPassword);
         Task<List<string>> GetDistinctUnitsAsync();
+        Task<bool> KemaskiniPasswordBaru(string id, string password);
 
     }
     public class Services(IRepoData repo, IReportRepo report, IUserRepo user) : IServices
@@ -433,6 +436,17 @@ namespace SAL
         public async Task<List<string>> GetDistinctUnitsAsync()
         {
             return await _report.GetDistinctUnitsAsync();
+        }
+
+        public bool IsPasswordValid(string password)
+        {
+            string pattern = @"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$";
+            return Regex.IsMatch(password, pattern);
+        }
+
+        public async Task<bool> KemaskiniPasswordBaru(string id, string password)
+        {
+            return await _user.KemaskiniPasswordBaru(id, password);
         }
     }
 }
