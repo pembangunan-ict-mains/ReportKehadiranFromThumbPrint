@@ -34,7 +34,42 @@ window.initializeDataTable = (tableId) => {
     }, 1000); // bagi lebih masa Blazor render penuh
 };
 
+window.initializeDataTableX = function (id) {
+    if (!id) return;
+    var el = document.getElementById(id);
+    if (!el) {
+        console.warn("Table element not found:", id);
+        return;
+    }
 
+    // If you use DataTables plugin:
+    if (window.jQuery && $.fn && $.fn.DataTable) {
+        var selector = '#' + id;
+
+        // If already initialized, destroy first (prevents "Cannot reinitialise" error)
+        try {
+            if ($.fn.DataTable.isDataTable(selector)) {
+                $(selector).DataTable().destroy(true);
+                // optionally remove markup of DataTables wrapper so it re-creates cleanly
+                $(selector).find('thead').show();
+            }
+        } catch (e) {
+            console.warn('Error destroying existing DataTable for', id, e);
+        }
+
+        // initialize
+        $(selector).DataTable({
+            paging: true,
+            searching: true,
+            responsive: true,
+            autoWidth: false
+        });
+        return;
+    }
+
+    // Fallback if DataTables not present: add minimal styling or console warning
+    console.warn("jQuery/DataTables not present. Please include them if you want full table features.");
+};
 //window.initializeDataTable = (tableId) => {
 //    setTimeout(() => {
 //        var table = document.getElementById(tableId);

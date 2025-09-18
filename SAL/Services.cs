@@ -54,6 +54,7 @@ namespace SAL
         Task<bool> ResetPasswordAsync(int id, string plainPassword);
         Task<List<string>> GetDistinctUnitsAsync();
         Task<bool> KemaskiniPasswordBaru(string id, string password);
+        Task<IEnumerable<tblMainKehadiran>> GetDetailsReportPerMonthPerYear(int bulan, int tahun);
 
     }
     public class Services(IRepoData repo, IReportRepo report, IUserRepo user) : IServices
@@ -443,10 +444,14 @@ namespace SAL
             string pattern = @"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$";
             return Regex.IsMatch(password, pattern);
         }
-
         public async Task<bool> KemaskiniPasswordBaru(string id, string password)
         {
             return await _user.KemaskiniPasswordBaru(id, password);
+        }
+
+        public async Task<IEnumerable<tblMainKehadiran>> GetDetailsReportPerMonthPerYear(int bulan, int tahun)
+        {
+            return await _repo.GetDetailsReportPerMonthPerYear(bulan, tahun);
         }
     }
 }

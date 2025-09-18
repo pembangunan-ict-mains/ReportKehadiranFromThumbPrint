@@ -22,38 +22,6 @@
 <div class="container">
     <div class="row">
         <h3 class="fw-bold">Jumlah Rekod Thumbprint Mengikut Bulan Bagi Tahun <span style="color:red;">@DateTime.Now.Year</span></h3>
-         @*  @if (adaRekod)
-            {           
-                <div class="table-responsive-lg mt-5">
-                    <table class="table table-bordered table-hover table-striped align-middle text-center shadow-sm rounded-3">
-                        <thead class="table-success">
-                            <tr class="fw-bold">
-                                <th style="width:10%">Bulan</th>
-                                <th style="width:25%">Nama Bulan</th>
-                                <th style="width:25%">Jumlah Rekod</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var x in data)
-                            {
-                                <tr>
-                                    <td>@x.Month</td>
-                                    <td class="text-start">@x.MonthName</td>
-                                    <td>@x.AttendanceCount.ToString("N0")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="card-body mt-5">
-                    <h5>Jumlah Keseluruhan Rekod Kedatangan Mengikut Bulan Bagi Tahun <span class="fw-bold" style="color:red;">@DateTime.Now.Year</span> </h5>
-                    <div class="chart-container">                  
-                        <canvas id="Chart1"></canvas>
-                    </div>
-                </div>
-            }
-     *@
     </div>
     <div class="row mt-1">
         <div class="container mt-1">
@@ -65,7 +33,7 @@
                         <div class="col-12 col-md-6 col-lg-4">
                             <div class="card shadow-sm border-0 rounded-4 h-100 hover-shadow">
                                 <div class="card-body p-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-2" @onclick="() => GetDetails(x)">
                                         <span class="badge bg-success bg-gradient px-3 py-2 fs-6">
                                             Bulan @x.Month
                                         </span>
@@ -112,7 +80,19 @@
 
     IEnumerable<InfoDashboard> data = [];
     IEnumerable<InfoDashboard> dataChart = [];
+  
     public int Jumlah;
+
+    private async Task GetDetails(InfoDashboard e)
+    {
+        var bulan = e.Month.ToString();
+        var tahun = DateTime.Now.Year.ToString();
+
+        string baseUrl = (Mode == "Dev") ? $"/MaklumatTerperinci/{EncryptionHelper.Encode(bulan)}/{EncryptionHelper.Encode(tahun)}" : $"/rekodkedatangan/Maklumatterperinci/{EncryptionHelper.Encode(bulan)}/{EncryptionHelper.Encode(tahun)}";
+        NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+    
+
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -126,7 +106,6 @@
             string baseUrl = (Mode == "Dev") ? "/SessiTamat" : "/rekodkedatangan/SessiTamat";
             NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
         }
-
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -147,7 +126,6 @@
                      dataChart.Select(d => d.Month).ToArray(),
                      dataChart.Select(d => d.AttendanceCount).ToArray());
                 }
-
             }
             catch (System.Exception er)
             {
@@ -162,28 +140,5 @@
             }
         }
     }
-
-
-    // private async Task GetInfo()
-    // {
-    //     try
-    //     {
-    //         isLoading = true;
-    //         data = Enumerable.Empty<InfoDashboard>();
-    //         data = await _services.GetInfoForDashboard() ?? Enumerable.Empty<InfoDashboard>();
-    //         adaRekod = data.Any(); 
-    //     }
-    //     catch(System.Exception er)
-    //     {
-    //         isLoading = false;
-    //         throw;
-    //     }
-    //     finally
-    //     {
-    //         isLoading = false;
-    //         StateHasChanged(); 
-    //     }
-
-    // }
 
 }

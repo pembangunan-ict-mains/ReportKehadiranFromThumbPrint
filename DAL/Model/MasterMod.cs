@@ -36,7 +36,10 @@ namespace DAL.Model
         public TimeSpan? Overt { get; set; }
         public byte? Group_Roster { get; set; }
         public string IC { get; set; } = string.Empty;
-        public string Card_No { get; set; }
+        public string Card_No { get; set; } = string.Empty;
+        public string Remark { get; set; } = string.Empty;
+        public string LeaveType { get; set; } = string.Empty;
+
     }
 
     public class InfoDashboard

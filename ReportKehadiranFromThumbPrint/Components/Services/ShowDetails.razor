@@ -1,0 +1,49 @@
+﻿@using System.Collections
+@typeparam TItem
+
+<div class="card-body">
+    @if (GroupedData != null && GroupedData.Any())
+    {
+        var groupsList = GroupedData.ToList();
+        @for (int idx = 0; idx < groupsList.Count; idx++)
+        {
+            var group = groupsList[idx];
+            var tableId = $"myTable{idx}";
+
+            <h5 class="mt-4 text-success">Employee: @group.Key</h5>
+
+            <table id="@tableId"
+                   class="table table-bordered table-hover table-striped align-middle text-center shadow-sm rounded-3 my-datatable"
+                   style="font-size:0.85rem;">
+                <thead class="table-dark">
+                    <tr>
+                        @foreach (var header in TableHeaders)
+                        {
+                            <th>@header</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in group)
+                    {
+                        <tr>
+                            @RowTemplate(item)
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+    else
+    {
+        <div class="alert alert-warning">Tiada rekod dijumpai 💔</div>
+    }
+</div>
+
+@code {
+    [Parameter] public IEnumerable<IGrouping<string, TItem>>? GroupedData { get; set; }
+
+    [Parameter] public IEnumerable<string> TableHeaders { get; set; } = Array.Empty<string>();
+
+    [Parameter] public RenderFragment<TItem> RowTemplate { get; set; } = default!;
+}

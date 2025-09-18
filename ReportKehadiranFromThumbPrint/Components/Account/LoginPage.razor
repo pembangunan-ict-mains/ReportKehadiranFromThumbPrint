@@ -38,7 +38,7 @@
                                    placeholder=" "
                                    required
                                    autofocus />
-                        <label class="floating-label">ID Pengguna Cth: XXXX</label>
+                        <label class="floating-label">ID Pengguna Cth: 1354</label>
                     </div>
 
                     <!-- Password Input -->
@@ -88,8 +88,8 @@
     [SupplyParameterFromForm]
     public LoginModel loginModel { get; set; } = new LoginModel
     {
-        // UserId = "sysadmin",
-        // Password = "P@wd2025"
+        UserId = "1354",
+        Password = "Password@2025"
     };
 
     public string Mode = string.Empty;
@@ -120,12 +120,10 @@
         }
         else
         {
-            // var _getinfo = await _service.GetInfoUser("MA" + loginModel.UserId);
             var _getinfo = await _service.GetloginInfo("MA" + loginModel.UserId);
             if (_getinfo.Any())
             {
-                // string hashedPassword = BCrypt.Net.BCrypt.EnhancedHashPassword("Password@2025");
-
+               
                 var xx = _getinfo.FirstOrDefault();
                 var pass = xx?.Password; var Nama = xx?.Nama;
                 bool _output = BCrypt.Net.BCrypt.EnhancedVerify(loginModel.Password, pass);

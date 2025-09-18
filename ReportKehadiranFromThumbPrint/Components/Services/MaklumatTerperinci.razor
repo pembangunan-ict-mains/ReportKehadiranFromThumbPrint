@@ -1,0 +1,245 @@
+﻿@page "/MaklumatTerperinci/{bulan}/{tahun}"
+
+@layout MainLayout
+@inject IConfiguration _conf
+@inject IServices _services
+@rendermode InteractiveServer
+@* @rendermode @(new InteractiveServerRenderMode(prerender: false)) *@
+@attribute [Authorize]
+@inject IIdentityAuthenticationLib myIden
+@inject NavigationManager NavMan
+@inject IJSRuntime JSRuntime
+
+@if (isLoading)
+{
+    <div class="loading-overlay">
+        <LoadingProgress />
+    </div>
+}
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-body">
+
+            @if (grpdata != null && grpdata.Any())
+            {
+                var groupsList = grpdata.ToList();
+
+                <table id="myTable" class="table table-bordered table-hover table-striped align-middle text-center shadow-sm rounded-3 my-datatable" style="font-size:0.85rem;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Employee</th>
+                            <th>Tarikh</th>
+                            <th>Jenis Hari</th>
+                            <th>Hari</th>
+                            <th>Id Pengguna</th>
+                            <th>Nama</th>
+                            <th>Nama</th>
+                            <th>No. Staff</th>
+                            <th>Bahagian</th>
+                            <th>Waktu Masuk</th>
+                            <th>Waktu Keluar</th>
+                            <th>Jumlah Kerja</th>
+                            <th>Work2</th>
+                            <th>Jenis Cuti</th>
+                            <th>Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in groupsList)
+                        {
+                            foreach (var item in group)
+                            {
+                                <tr>
+                                    <td>@group.Key</td>
+                                    <td>@item.Date</td>
+                                    <td>@item.Day_Type</td>
+                                    <td>@item.Weekday</td>
+                                    <td>@item.User_ID</td>
+                                    <td>@item.First_Name</td>
+                                    <td>@item.Last_Name</td>
+                                    <td>@item.Employee</td>
+                                    <td>@item.Department</td>
+                                    <td>@item.In</td>
+                                    <td>@item.Out</td>
+                                    <td>@item.Work</td>
+                                    <td>@item.Work2</td>
+                                    <td>@item.LeaveType</td>
+                                    <td>@item.Remark</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+
+
+           
+
+
+            @if (grpdata != null && grpdata.Any())
+            {
+                var groupsList = grpdata.ToList();     // materialize once so index is stable
+                @for (int idx = 0; idx < groupsList.Count; idx++)
+                {
+                    var group = groupsList[idx];
+                    var tableId = $"myTable{idx}";
+
+                    <h5 class="mt-4 text-success">Employee: @group.Key</h5>
+
+                    <table id="@tableId" class="table my-datatable table-bordered table-hover table-striped align-middle text-center shadow-sm rounded-3 my-datatable" style="font-size:0.85rem;">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Tarikh</th>
+                                <th>Jenis Hari</th>
+                                <th>Hari</th>
+                                <th>Id Pengguna</th>
+                                <th>Nama</th>
+                                <th>Nama</th>
+                                <th>No. Staff</th>
+                                <th>Bahagian</th>
+                                <th>Waktu Masuk</th>
+                                <th>Waktu Keluar</th>
+                                <th>Jumlah Kerja</th>
+                                <th>Work2</th>
+                                <th>Jenis Cuti</th>
+                                <th>Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in group)
+                            {
+                                <tr>
+                                    <td>@item.Date</td>
+                                    <td>@item.Day_Type</td>
+                                    <td>@item.Weekday</td>
+                                    <td>@item.User_ID</td>
+                                    <td>@item.First_Name</td>
+                                    <td>@item.Last_Name</td>
+                                    <td>@item.Employee</td>
+                                    <td>@item.Department</td>
+                                    <td>@item.In</td>
+                                    <td>@item.Out</td>
+                                    <td>@item.Work</td>
+                                    <td>@item.Work2</td>
+                                    <td>@item.LeaveType</td>
+                                    <td>@item.Remark</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+            else
+            {
+                <div class="alert alert-warning">Tiada rekod dijumpai 💔</div>
+            }
+        </div>
+    </div>
+</div>
+
+
+
+
+@code {
+    [Parameter]
+    public string bulan { get; set; } = string.Empty;
+
+    [Parameter]
+    public string tahun { get; set; } = string.Empty;
+
+
+    public bool isLoading = false;
+    public string Mode = string.Empty;
+    public bool adaRekod = false; public bool adaChart = false;
+    public string NamaPekerja = string.Empty;
+    public string NAMA = string.Empty;
+    public string NoStaf = string.Empty;
+    public string JumlahRekod = string.Empty;
+    private tblInfoUserReport newUser = new();
+    IEnumerable<tblInfoUserReport> _user = [];
+    public List<string> _listUnit = new List<string>();
+    public int BBulan; public int TTahun;
+    IEnumerable<tblMainKehadiran> _logs = [];
+    public IEnumerable<IGrouping<string, tblMainKehadiran>> grpdata { get; set; }
+    = Enumerable.Empty<IGrouping<string, tblMainKehadiran>>();
+
+    private bool _tablesInitialized = false;
+
+    private async Task LoadInitialize()
+    {
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("initializeDataTable", "myTable"); await Task.Delay(100);
+        }
+        catch (JSException jsEx)
+        {
+            Console.WriteLine($"JS init error for : {jsEx.Message}");
+        }
+
+    }
+
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        BBulan = Convert.ToInt32(EncryptionHelper.Decode(bulan.ToString()));
+        TTahun = Convert.ToInt32(EncryptionHelper.Decode(tahun.ToString()));
+        await Task.CompletedTask;
+        StateHasChanged();
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Mode = _conf["Mode"]?.ToString() ?? string.Empty;
+        var authState = await myIden.GetUserAsync();
+        var user = authState.Identity as ClaimsIdentity;
+        NamaPekerja = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "";
+        NoStaf = user?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
+
+        if (user == null || !user.IsAuthenticated)
+        {
+            await myIden.SignOutUserAsync();
+            string baseUrl = (Mode == "Dev") ? "/SessiTamat" : "/rekodkedatangan/SessiTamat";
+            NavMan.NavigateTo(NavMan.ToAbsoluteUri(baseUrl).ToString(), true);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isLoading = true;StateHasChanged();
+
+            await LoadFile();
+            await LoadMainData();
+            await LoadInitialize();
+            await JSRuntime.InvokeVoidAsync("initializeDataTables");
+            await Task.Delay(100);
+            isLoading = false;StateHasChanged();
+        }
+    }
+
+    private async Task LoadFile()
+    {
+        await JSRuntime.InvokeVoidAsync("loadSweetAlert");
+    }
+
+    private async Task LoadMainData()
+    {
+        _logs = await _services.GetDetailsReportPerMonthPerYear(BBulan, TTahun);       
+        if (_logs != null && _logs.Any())
+        {
+            var ada = _logs.GroupBy(x => x.Employee);
+            if (ada.Any())
+            {
+                grpdata = ada; adaRekod = true;
+            }
+        }
+        await Task.Delay(200);
+
+    }
+
+}

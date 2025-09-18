@@ -32,12 +32,22 @@ namespace DAL.Repo
         bool AddLog(LogEntry log);
         Task<bool> CheckDuplicateResult(string UID, string Employee, string xDate);
         Task<bool> InsertIntoDBFinal_BULK(DataTable dt); Task CrossCheckUpdateRekod();
+        Task<IEnumerable<tblMainKehadiran>> GetDetailsReportPerMonthPerYear(int bulan, int tahun);
     }
     public class RepoData(ServerProd serverProd, ServerDev serverDev, ServerEHR serverEhr) : IRepoData
     {
         private readonly ServerProd _serverProd = serverProd;
         private readonly ServerDev _serverDev = serverDev;
         private readonly ServerEHR _serverEhr = serverEhr;
+
+
+        public async Task<IEnumerable<tblMainKehadiran>> GetDetailsReportPerMonthPerYear(int bulan, int tahun)
+        {
+            string sql = @"select a.* from tblMainKehadiran a where YEAR([date]) = @tahun and month(date) = @bulan and a.Day_Type = 'Workday'
+                        order by a.Employee, a.Date asc";
+            return await _serverProd.Connections().QueryAsync<tblMainKehadiran>(sql, new {bulan = bulan, tahun = tahun });
+        }
+
 
         public async Task<bool> GetStatusRecordAsync(int bulan, int tahun)
         {
